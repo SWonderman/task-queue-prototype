@@ -13,6 +13,7 @@ from django.core.wsgi import get_wsgi_application
 from fastapi import FastAPI
 from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 import os
 
@@ -22,6 +23,8 @@ application = get_wsgi_application()
 
 fastapp_v1_root = "/api/v1"
 fastapp_v1 = FastAPI()
+
+fastapp_v1.mount("/static", StaticFiles(directory=settings.BASE_DIR / "static"), name="static")
 
 origins = [
     "http://localhost:8000/",

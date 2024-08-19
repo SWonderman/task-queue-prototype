@@ -41,10 +41,10 @@ fastapp_v1.add_middleware(
     allow_headers=["*"],
 )
 
-from api.v1.routers.queue import router as queue_router
+from api.v1.routers.core import router as queue_router
 
 fastapp_v1.include_router(
-    queue_router, prefix=f"{fastapp_v1_root}/queue"
+    queue_router, prefix=f"{fastapp_v1_root}/core"
 )
 
 @fastapp_v1.get(f"{fastapp_v1_root}/healthcheck", include_in_schema=False)

@@ -40,7 +40,7 @@ class OrderItem(BaseModel):
     price = models.DecimalField(decimal_places=4, max_digits=19)
     quantity = models.PositiveSmallIntegerField()
 
-    order = models.ForeignKey("Order", related_name="product", on_delete=models.CASCADE)
+    order = models.ForeignKey("Order", related_name="order_items", on_delete=models.CASCADE)
 
 
 class Order(BaseModel):
@@ -100,10 +100,11 @@ class Order(BaseModel):
                     ))
                 except Exception as e:
                     failed.append(Error(message=f"Could not create fake order. Error: {e}"))
+                    continue
 
-            if orders:
-                cls.objects.bulk_create(orders)
-                OrderItem.objects.bulk_create(order_items)
-                Customer.objects.bulk_create(customers)
+        if orders:
+            cls.objects.bulk_create(orders)
+            OrderItem.objects.bulk_create(order_items)
+            Customer.objects.bulk_create(customers)
 
         return failed

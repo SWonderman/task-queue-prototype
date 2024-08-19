@@ -3,6 +3,7 @@ cache/
 CACHE/
 venv/
 node_modules/
+migrations/
 
 .env
 *.sqlite3

@@ -43,10 +43,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "compressor",
     "core",
 ]
 
-MIDDLEWARE = [
+MIDDLEWARE = [""
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -138,7 +139,12 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Compressor
+COMPRESS_ROOT = BASE_DIR / "static"
 
+COMPRESS_ENABLED = True
+
+STATICFILES_FINDERS = ("compressor.finders.CompressorFinder",)
 
 # Celery
 

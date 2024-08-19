@@ -3,6 +3,11 @@ from dataclasses import dataclass
 from enum import Enum
 
 
+@dataclass
+class Error:
+    message: str
+
+
 class OrderState(str, Enum):
    SHIPPING = "SHIPPING"
    SHIPPED = "SHIPPED"

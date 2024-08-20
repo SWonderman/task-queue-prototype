@@ -36,3 +36,7 @@ class Order(BaseSchema):
     currency_iso_code: str
     order_items: List[OrderItem]
     customer: Customer
+
+
+class OrderIds(BaseModel):
+    order_ids: List[str]

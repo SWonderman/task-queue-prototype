@@ -1,11 +1,12 @@
 import math
 from typing import List, Annotated
 
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, Body
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 
 from core.models import Order
+from core.tasks import handle_orders
 
 from api.v1.schemas import order as order_schema
 from api.v1.schemas import core as core_schema
@@ -87,3 +88,8 @@ def generate_orders(generate: Annotated[int, Path(ge=1)] = 5):
             ) for error in failed
         ]
     )
+
+
+@router.post("/orders/handle")
+def add_orders_to_handling_queue(ids: Annotated[order_schema.OrderIds, Body]):
+    handle_orders.delay(order_ids=ids.order_ids)

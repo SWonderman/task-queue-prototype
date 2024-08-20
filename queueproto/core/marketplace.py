@@ -4,7 +4,7 @@ import random
 
 from faker import Faker
 
-from core.definitions import OrderState, Order, OrderItem, Customer
+from core.definitions import OrderState, Order, OrderItem, Customer, OrderShipment
 
 fake = Faker()
 
@@ -97,17 +97,36 @@ def generate_order_item() -> OrderItem:
         quantity=random.randint(1, 3),
     )
 
+
+def generate_order_shipment() -> OrderShipment:
+    carriers = [
+        {"name": "DHL", "code": "dhl"},
+        {"name": "PostNord", "code": "postnord"},
+        {"name": "FedEx", "code": "fedex"},
+        {"name": "Cargo Express", "code": "cargoex"},
+    ]
+    characters_set = string.ascii_letters + string.digits
+    shipment_id = "SHIPMENT-".join(random.choice(characters_set) for i in range(6))
+
+    carrier = carriers[random.randint(0, len(carriers) - 1)]
+
+    return OrderShipment(
+        shipment_id=shipment_id,
+        carrier_name=carrier.get("name", ""),
+        carrier_code=carrier.get("code", ""),
+    )
+
+
 def generate_order() -> Order:
     customer: Customer = generate_customer()
     order_items: List[OrderItem] = [generate_order_item() for _ in range(random.randint(1, 5))]
 
-    states = [state for state in OrderState]
     currency_iso_codes = ["SEK", "PLN", "DKK", "EUR", "NOK"]
 
     return Order(
         total_price=sum([order_item.price for order_item in order_items]),
         total_quantity=sum([order_item.quantity for order_item in order_items]),
-        state=states[random.randint(0, len(states) - 1)],
+        state=OrderState.SHIPPING,
         currency_iso_code=currency_iso_codes[random.randint(0, len(currency_iso_codes) - 1)],
         order_items=order_items,
         customer=customer,

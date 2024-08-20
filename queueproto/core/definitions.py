@@ -1,11 +1,19 @@
-from typing import Optional, List
+from typing import Optional, List, TypeVar, Generic
 from dataclasses import dataclass
 from enum import Enum
+
+T = TypeVar("T")
 
 
 @dataclass
 class Error:
     message: str
+
+
+@dataclass
+class Result(Generic[T]):
+    error: Optional[Error]
+    result: T
 
 
 class OrderState(str, Enum):
@@ -31,6 +39,13 @@ class OrderItem:
     product_media_url: Optional[str]
     price: float
     quantity: int
+
+
+@dataclass
+class OrderShipment:
+    shipment_id: str
+    carrier_name: str
+    carrier_code: str
 
 
 @dataclass

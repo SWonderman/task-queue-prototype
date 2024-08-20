@@ -1,12 +1,14 @@
-from typing import List
 import uuid
+import time
+import random
+from typing import List, Optional
 
 from django.db import models, transaction
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 
-from core.marketplace import generate_order
-from core.definitions import Order as OrderDefinition, Error
+from core.marketplace import generate_order, generate_order_shipment
+from core.definitions import Order as OrderDefinition, Error, Result, OrderShipment as OrderShipmentDefinition
 
 
 class BaseModel(models.Model):
@@ -41,6 +43,60 @@ class OrderItem(BaseModel):
     quantity = models.PositiveSmallIntegerField()
 
     order = models.ForeignKey("Order", related_name="order_items", on_delete=models.CASCADE)
+
+
+class OrderShipment(BaseModel):
+    shipment_id = models.TextField(max_length=50, unique=True)
+    carrier_name = models.TextField(max_length=125)
+    carrier_code = models.TextField(max_length=50)
+
+    order = models.OneToOneField("Order", related_name="shipment", on_delete=models.CASCADE, null=True, blank=True)
+
+    @classmethod
+    def create_shipment_for_order(cls, order: "Order") -> "OrderShipment":
+        started_at = now()
+
+        shipment_data: OrderShipmentDefinition = generate_order_shipment()
+        shipment = cls.objects.create(
+            shipment_id=shipment_data.shipment_id,
+            carrier_name=shipment_data.carrier_name,
+            carrier_code=shipment_data.carrier_code,
+            order=order,
+        )
+
+        OrderHandlingProcess.objects.create(
+            status=OrderHandlingProcess.Status.SUCCEDED,
+            state=OrderHandlingProcess.State.GENERATING_SHIPMENT,
+            started_at=started_at,
+            finished_at=now(),
+            order=order,
+        )
+
+        # TODO: it might be a good idea to return just created handling process
+        # and pass it to the next function/task that it meant to run only
+        # if this process was successful.
+
+        return shipment
+
+
+class OrderHandlingProcess(BaseModel):
+    class Status(models.TextChoices):
+        SUCCEDED = "SUCCEDED", _("SUCCEDED")
+        FAILED = "FAILED", _("FAILED")
+
+    class State(models.TextChoices):
+        WAITING = "WAITING", _("WAITING")
+        GENERATING_SHIPMENT = "GENERATING SHIPMENT", _("GENERATING SHIPMENT")
+        SENDING_TRACKING = "SENDING TRACKING", _("SENDING TRACKING")
+        MARKING_AS_SHIPPED = "MARKING AS SHIPPED", _("MARKING AS SHIPPED")
+        HANDLED = "HANDLED", _("HANDLED")
+
+    status = models.CharField(max_length=25, choices=Status.choices)
+    state = models.CharField(max_length=25, choices=State.choices)
+    started_at = models.DateTimeField()
+    finished_at = models.DateTimeField()
+
+    order = models.ForeignKey("Order", related_name="handling_processes", on_delete=models.CASCADE, null=True, blank=True)
 
 
 class Order(BaseModel):
@@ -108,3 +164,37 @@ class Order(BaseModel):
             Customer.objects.bulk_create(customers)
 
         return failed
+
+    @classmethod
+    def send_back_tracking_number(cls, order: "Order"):
+        started_at = now()
+
+        # NOTE: just simulate a work of sending an API request and waiting for response
+        time.sleep(random.uniform(0.1, 0.5))
+
+        # TODO: tracking cannot be sent if the order does not have shipment
+
+        OrderHandlingProcess.objects.create(
+            status=OrderHandlingProcess.Status.SUCCEDED,
+            state=OrderHandlingProcess.State.SENDING_TRACKING,
+            started_at=started_at,
+            finished_at=now(),
+            order=order,
+        )
+
+    @classmethod
+    def mark_order_as_shipped(cls, order: "Order"):
+        started_at = now()
+
+        # NOTE: just simulate a work of sending an API request and waiting for response
+        time.sleep(random.uniform(0.1, 0.5))
+
+        # TODO: order cannot be marked as shipped if tracking information were not sent to back
+
+        OrderHandlingProcess.objects.create(
+            status=OrderHandlingProcess.Status.SUCCEDED,
+            state=OrderHandlingProcess.State.MARKING_AS_SHIPPED,
+            started_at=started_at,
+            finished_at=now(),
+            order=order,
+        )

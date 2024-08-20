@@ -9,7 +9,10 @@
         <h1 class="text-xl font-semibold text-gray-700">Orders</h1>
     </div>
     <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
-        <div class="p-4 flex justify-end bg-gray-50">
+        <div class="p-4 flex justify-between bg-gray-50">
+            <div class="border border-gray-200 text-xs flex flex-row gap-2 rounded hover:shadow">
+                <button class="p-2 text-gray-500" onclick="handleOrders()">Handle</button>
+            </div>
             <div class="p-2 border border-gray-200 text-xs flex flex-row gap-2 rounded hover:shadow">
                 <button class="text-gray-500" onclick="generateOrders()">Generate</button>
                 <select name="to-generate" id="to-generate" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full">
@@ -39,7 +42,9 @@
             <tbody>
                 {% for order in orders %}
                 <tr class="odd:bg-white even:bg-gray-50 border-b">
-                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"><input type="checkbox" name="order"/></th>
+                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        <input type="checkbox" name="order" value="{{ order.id }}"/>
+                    </th>
                     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                         {{ order.id }}
                     </th>

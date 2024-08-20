@@ -74,3 +74,16 @@ def get_orders(
         pages_count=all_pages_count,
         items=items,
     )
+
+
+@router.post("/orders", response_model=core_schema.ErrorResponse)
+def generate_orders(generate: Annotated[int, Path(ge=1)] = 5):
+    failed = Order.generate_and_add_fake_orders(to_generate=generate)
+
+    return core_schema.ErrorResponse(
+        errors=[
+            core_schema.Error(
+                message=error.message,
+            ) for error in failed
+        ]
+    )

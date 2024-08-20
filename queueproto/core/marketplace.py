@@ -64,13 +64,23 @@ PRODUCT_NAMES = [
 
 
 def generate_customer() -> Customer:
+    countries = [
+        "Denmark",
+        "Sweden",
+        "Germany",
+        "Netherlands",
+        "Finland",
+        "Norway",
+        "Poland",
+    ]
+
     return Customer(
         first_name=fake.first_name(),
         last_name=fake.last_name(),
         address1=fake.street_address(),
         address2=fake.secondary_address(),
         zip_code=fake.zipcode(),
-        country=fake.country(),
+        country=countries[random.randint(0, len(countries) - 1)],
     )
 
 

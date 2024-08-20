@@ -10,7 +10,9 @@
         <table class="w-full text-sm text-left rtl:text-right text-gray-500">
             <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
-                    <th scope="col" class="px-6 py-3"><input type="checkbox" name="root-checkbox"/></th>
+                    <th scope="col" class="px-6 py-3">
+                        <input type="checkbox" id="root-checkbox" name="root-checkbox" onclick="toggleAllOrders()"/>
+                    </th>
                     <th scope="col" class="px-6 py-3">Order</th>
                     <th scope="col" class="px-6 py-3">Customer</th>
                     <th scope="col" class="px-6 py-3">Country</th>

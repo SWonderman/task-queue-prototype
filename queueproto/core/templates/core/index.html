@@ -1,6 +1,7 @@
 {% extends "_base.html" %}
 
 {% load static %}
+{% load getvalue %}
 
 {% block content %}
     <ul id="notifications-box" class="flex flex-col absolute top-5 left-5 gap-6"></ul>
@@ -35,6 +36,7 @@
                     <th scope="col" class="px-6 py-3">Country</th>
                     <th scope="col" class="px-6 py-3 text-center">Total</th>
                     <th scope="col" class="px-6 py-3 text-center">Fulfillment Status</th>
+                    <th scope="col" class="px-6 py-3 text-center">Handling Status</th>
                     <th scope="col" class="px-6 py-3 text-center">Items</th>
                     <th scope="col" class="px-6 py-3 text-center">Actions</th>
                 </tr>
@@ -85,6 +87,12 @@
                         {% else %}
                             {{ order.state }}
                         {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        {% for process in order.handling_processes.all %}
+                            {{ process.state }}
+                        {% endfor %}
+                        {{ handling_processes|getvalue:order.id }}
                     </td>
                     <td class="px-6 py-4 text-center">
                         {% if order.total_quantity > 1 %}

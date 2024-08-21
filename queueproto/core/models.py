@@ -1,7 +1,7 @@
 import uuid
 import time
 import random
-from typing import List, Optional
+from typing import List, Optional, Dict, Iterable
 
 from django.db import models, transaction
 from django.utils.timezone import now, make_aware
@@ -204,3 +204,11 @@ class Order(BaseModel):
             finished_at=now(),
             order=order,
         )
+
+    @classmethod
+    def get_associated_handling_processes(cls, orders: Iterable["Order"]) -> Dict[str, List[OrderHandlingProcess]]:
+        order_ids_to_their_hadling_processes = dict()
+        for order in orders:
+            order_ids_to_their_hadling_processes[order.id] = list(order.handling_processes.all())
+
+        return order_ids_to_their_hadling_processes

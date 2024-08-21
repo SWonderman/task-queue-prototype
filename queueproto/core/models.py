@@ -4,7 +4,7 @@ import random
 from typing import List, Optional
 
 from django.db import models, transaction
-from django.utils.timezone import now
+from django.utils.timezone import now, make_aware
 from django.utils.translation import gettext_lazy as _
 
 from core.marketplace import generate_order, generate_order_shipment
@@ -112,7 +112,7 @@ class Order(BaseModel):
     placed_at = models.DateTimeField()
 
     @classmethod
-    def generate_and_add_fake_orders(cls, to_generate: int) -> List[Error]:
+    def generate_and_add_fake_orders(cls, to_generate: int) -> Result[List["Order"]]:
         # do not play with me...
         if to_generate <= 0:
             to_generate = 1
@@ -120,6 +120,7 @@ class Order(BaseModel):
         fake_orders: List[OrderDefinition] = [generate_order() for _ in range(to_generate)]
 
         orders: List[Order] = []
+        created_orders: List[Order] = []
         order_items: List[OrderItem] = []
         customers: List[Customer] = []
         failed: List[Error] = []
@@ -131,7 +132,7 @@ class Order(BaseModel):
                         total_quantity=fake_order.total_quantity,
                         state=cls.State[fake_order.state],
                         currency_iso_code=fake_order.currency_iso_code,
-                        placed_at=fake_order.placed_at,
+                        placed_at=make_aware(fake_order.placed_at),
                     )
                     orders.append(order)
 
@@ -161,11 +162,14 @@ class Order(BaseModel):
                     continue
 
         if orders:
-            cls.objects.bulk_create(orders)
+            created_orders = cls.objects.bulk_create(orders)
             OrderItem.objects.bulk_create(order_items)
             Customer.objects.bulk_create(customers)
 
-        return failed
+        return Result(
+            errors=failed,
+            result=created_orders,
+        )
 
     @classmethod
     def send_back_tracking_number(cls, order: "Order"):

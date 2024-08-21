@@ -1,17 +1,24 @@
 import math
-from typing import List, Annotated
+import asyncio
+from typing import List, Annotated, AsyncGenerator, Set
 
-from fastapi import APIRouter, Path, Body
+from fastapi import APIRouter, Path, Body, Request
+from fastapi.responses import StreamingResponse
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 
 from core.models import Order
+from core.events import OrderEventsQueue
 from core.tasks import handle_orders
+from core.definitions import Result
 
-from api.v1.schemas import order as order_schema
-from api.v1.schemas import core as core_schema
+from api.v1.schemas import order as order_schema, core as core_schema
+from api.v1.utils import order as order_api_utils
+
 
 router = APIRouter()
+
+active_connections: Set[Request] = set()
 
 
 @router.get("/orders", response_model=core_schema.ResponseWithPagination[order_schema.Order])
@@ -33,41 +40,8 @@ def get_orders(
 
     orders: QuerySet[Order] = Order.objects.all()[lower_boundary:upper_boundary]
 
-    # ugly... unpacking does not want to collaborate today
     items = [
-        order_schema.Order(
-            id=order.id,
-            created_at=order.created_at,
-            updated_at=order.updated_at,
-            total_price=order.total_price,
-            total_quantity=order.total_quantity,
-            state=order.state,
-            currency_iso_code=order.currency_iso_code,
-            placed_at=order.placed_at,
-            order_items=[
-                order_schema.OrderItem(
-                    id=order_item.id,
-                    created_at=order_item.created_at,
-                    updated_at=order_item.updated_at,
-                    product_sku=order_item.product_sku,
-                    product_title=order_item.product_title,
-                    product_media_url=order_item.product_media_url,
-                    price=order_item.price,
-                    quantity=order_item.quantity,
-                ) for order_item in order.order_items.all()
-            ],
-            customer=order_schema.Customer(
-                id=order.customer.id,
-                created_at=order.customer.created_at,
-                updated_at=order.customer.updated_at,
-                first_name=order.customer.first_name,
-                last_name=order.customer.last_name,
-                address1=order.customer.address1,
-                address2=order.customer.address2,
-                zip_code=order.customer.zip_code,
-                country=order.customer.country,
-            )
-        ) for order in orders
+        order_api_utils.convert_db_order_to_schema(order=order) for order in orders
     ]
 
     return core_schema.ResponseWithPagination(
@@ -78,15 +52,40 @@ def get_orders(
     )
 
 
+async def order_event_generator(request: Request, controller: OrderEventsQueue) -> AsyncGenerator[str, None]:
+    while True:
+        if await request.is_disconnected():
+            break
+
+        if controller.has_orders():
+            recent_order = controller.pop_order()
+            if recent_order is None: # NOTE: this should not happen after the initial has_orders check
+                return
+            schemas_order = await asyncio.to_thread(order_api_utils.convert_db_order_to_schema, recent_order)
+            yield f"event: newOrders\ndata: {schemas_order.model_dump_json()}\n\n"
+        await asyncio.sleep(0.5)
+
+
+@router.get("/orders/stream")
+async def stream_orders(request: Request):
+    active_connections.add(request)
+    event_controller = OrderEventsQueue()
+    return StreamingResponse(order_event_generator(request=request, controller=event_controller), media_type="text/event-stream")
+
+
 @router.post("/orders", response_model=core_schema.ErrorResponse)
 def generate_orders(generate: Annotated[int, Path(ge=1)] = 5):
-    failed = Order.generate_and_add_fake_orders(to_generate=generate)
+    result: Result[List[Order]] = Order.generate_and_add_fake_orders(to_generate=generate)
+
+    if result.result and len(result.result) > 0:
+        event_controller = OrderEventsQueue()
+        event_controller.enque_orders(result.result)
 
     return core_schema.ErrorResponse(
         errors=[
             core_schema.Error(
                 message=error.message,
-            ) for error in failed
+            ) for error in result.errors
         ]
     )
 
@@ -94,3 +93,10 @@ def generate_orders(generate: Annotated[int, Path(ge=1)] = 5):
 @router.post("/orders/handle")
 def add_orders_to_handling_queue(ids: Annotated[order_schema.OrderIds, Body]):
     handle_orders.delay(order_ids=ids.order_ids)
+
+
+@router.on_event("shutdown")
+async def shutdown():
+    for conn in active_connections:
+        await conn.close()
+    active_connections.clear()

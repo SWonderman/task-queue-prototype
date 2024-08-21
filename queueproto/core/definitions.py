@@ -13,7 +13,7 @@ class Error:
 
 @dataclass
 class Result(Generic[T]):
-    error: Optional[Error]
+    errors: List[Error]
     result: T
 
 

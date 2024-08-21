@@ -65,7 +65,7 @@ class OrderShipment(BaseModel):
         )
 
         OrderHandlingProcess.objects.create(
-            status=OrderHandlingProcess.Status.SUCCEDED,
+            status=OrderHandlingProcess.Status.SUCCEEDED,
             state=OrderHandlingProcess.State.GENERATING_SHIPMENT,
             started_at=started_at,
             finished_at=now(),
@@ -81,7 +81,7 @@ class OrderShipment(BaseModel):
 
 class OrderHandlingProcess(BaseModel):
     class Status(models.TextChoices):
-        SUCCEDED = "SUCCEDED", _("SUCCEDED")
+        SUCCEEDED = "SUCCEEDED", _("SUCCEEDED")
         FAILED = "FAILED", _("FAILED")
 
     class State(models.TextChoices):
@@ -181,7 +181,7 @@ class Order(BaseModel):
         # TODO: tracking cannot be sent if the order does not have shipment
 
         OrderHandlingProcess.objects.create(
-            status=OrderHandlingProcess.Status.SUCCEDED,
+            status=OrderHandlingProcess.Status.SUCCEEDED,
             state=OrderHandlingProcess.State.SENDING_TRACKING,
             started_at=started_at,
             finished_at=now(),
@@ -198,7 +198,7 @@ class Order(BaseModel):
         # TODO: order cannot be marked as shipped if tracking information were not sent to back
 
         OrderHandlingProcess.objects.create(
-            status=OrderHandlingProcess.Status.SUCCEDED,
+            status=OrderHandlingProcess.Status.SUCCEEDED,
             state=OrderHandlingProcess.State.MARKING_AS_SHIPPED,
             started_at=started_at,
             finished_at=now(),

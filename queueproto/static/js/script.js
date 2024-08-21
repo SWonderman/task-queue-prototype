@@ -7,9 +7,9 @@ order_event_source.onopen = () => {
   console.log("Connected to the SSE.");
 };
 
-order_event_source.addEventListener("newOrders", function (event) {
+order_event_source.addEventListener("newOrders", async function (event) {
   try {
-    updateOrdersTable(JSON.parse(event.data));
+    await updateOrdersTable(JSON.parse(event.data));
   } catch (error) {
     console.error("Could not get event data:", error);
   }
@@ -60,11 +60,12 @@ function truncateFloatToTwoDecimalPlaces(number) {
   return number;
 }
 
-function updateOrdersTable(orderData) {
+async function updateOrdersTable(orderData) {
   const ordersTableBody = document.querySelector("#orders-table tbody");
 
   const tr = document.createElement("tr");
-  tr.className = "odd:bg-white even:bg-gray-50 border-b";
+  tr.className =
+    "odd:bg-white even:bg-gray-50 border-b opacity-0 -translate-y-2 transition-all duration-700 ease-in";
 
   const thCol1 = document.createElement("th");
   thCol1.scope = "row";
@@ -153,6 +154,13 @@ function updateOrdersTable(orderData) {
   tr.appendChild(tdCol9);
 
   ordersTableBody.prepend(tr);
+
+  requestAnimationFrame(() => {
+    tr.classList.remove("opacity-0", "-translate-y-2");
+  });
+
+  // Let the animation finish playing
+  await new Promise((resolve) => setTimeout(resolve, 500));
 }
 
 class NotificationController {

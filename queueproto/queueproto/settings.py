@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_beat",
     "compressor",
     "core",
 ]
@@ -108,6 +109,20 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+# Caching
+
+CACHES = {
+    "default": {
+        "BACKEND": env("CACHE_BACKEND"),
+        "LOCATION": env("CACHE_LOCATION"),
+        "TIMEOUT": 60 * 5,
+        "OPTIONS": {
+            "CLIENT_CLASS": env("CACHE_CLIENT_CLASS"),
+        },
+        "KEY_PREFIX": env("CACHE_KEY_PREFIX"),
+    }
+}
 
 
 # Internationalization

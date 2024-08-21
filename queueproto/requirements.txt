@@ -9,5 +9,6 @@ fastapi
 
 celery
 django-celery-beat
+django-redis
 
 Faker

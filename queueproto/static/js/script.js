@@ -1,4 +1,5 @@
-const API_URL = "http://localhost:8000/api/v1";
+const BASE_URL = "http://localhost:8000";
+const API_URL = `${BASE_URL}/api/v1`;
 
 // TODO: could use that later to color notifications based on their type
 const NotificationType = {
@@ -61,6 +62,30 @@ function toggleAllOrders() {
     Array.from(orderCheckboxes).map((checkbox) => {
       checkbox.checked = false;
     });
+  }
+}
+
+function gotoPreviousPage() {
+  const currentPage = +document.getElementById("pagination-current-page")
+    .innerHTML;
+  const allPages = +document.getElementById("pagination-total-pages-count")
+    .innerHTML;
+
+  if (currentPage - 1 >= 1) {
+    document.location.href = `${BASE_URL}?page=${currentPage - 1}`;
+  }
+}
+
+function gotoNextPage() {
+  const currentPage = +document.getElementById("pagination-current-page")
+    .innerHTML;
+  const allPages = +document.getElementById("pagination-total-pages-count")
+    .innerHTML;
+
+  console.log("Going to the next page with number:", currentPage + 1);
+
+  if (currentPage + 1 <= allPages) {
+    document.location.href = `${BASE_URL}?page=${currentPage + 1}`;
   }
 }
 

@@ -34,6 +34,7 @@ class Order(BaseSchema):
     total_quantity: int
     state: OrderState
     currency_iso_code: str
+    placed_at: datetime.datetime
     order_items: List[OrderItem]
     customer: Customer
 

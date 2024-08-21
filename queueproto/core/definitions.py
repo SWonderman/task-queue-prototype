@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, List, TypeVar, Generic
 from dataclasses import dataclass
 from enum import Enum
@@ -54,5 +55,6 @@ class Order:
    total_quantity: int
    state: OrderState
    currency_iso_code: str
+   placed_at: datetime
    order_items: List[OrderItem]
    customer: Customer

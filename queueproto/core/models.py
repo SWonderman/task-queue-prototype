@@ -109,6 +109,7 @@ class Order(BaseModel):
     total_quantity = models.PositiveSmallIntegerField()
     state = models.CharField(max_length=25, choices=State.choices)
     currency_iso_code = models.TextField(max_length=3)
+    placed_at = models.DateTimeField()
 
     @classmethod
     def generate_and_add_fake_orders(cls, to_generate: int) -> List[Error]:
@@ -130,6 +131,7 @@ class Order(BaseModel):
                         total_quantity=fake_order.total_quantity,
                         state=cls.State[fake_order.state],
                         currency_iso_code=fake_order.currency_iso_code,
+                        placed_at=fake_order.placed_at,
                     )
                     orders.append(order)
 

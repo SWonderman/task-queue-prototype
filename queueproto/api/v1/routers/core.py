@@ -43,6 +43,7 @@ def get_orders(
             total_quantity=order.total_quantity,
             state=order.state,
             currency_iso_code=order.currency_iso_code,
+            placed_at=order.placed_at,
             order_items=[
                 order_schema.OrderItem(
                     id=order_item.id,

@@ -1,4 +1,5 @@
 from typing import List, Dict
+import datetime
 import string
 import random
 
@@ -123,11 +124,25 @@ def generate_order() -> Order:
 
     currency_iso_codes = ["SEK", "PLN", "DKK", "EUR", "NOK"]
 
+    today = datetime.datetime.now()
+
+    min_time = datetime.time(0, 0, 0, 0)
+    max_time = today.time()
+
+    min_today = datetime.datetime.combine(today.date(), min_time)
+
+    delta_time = today - min_today
+    delta_time_seconds = delta_time.seconds
+
+    random_seconds = random.randint(0, delta_time_seconds)
+    placed_at = min_today + datetime.timedelta(seconds=random_seconds)
+
     return Order(
         total_price=sum([order_item.price for order_item in order_items]),
         total_quantity=sum([order_item.quantity for order_item in order_items]),
         state=OrderState.SHIPPING,
         currency_iso_code=currency_iso_codes[random.randint(0, len(currency_iso_codes) - 1)],
+        placed_at=placed_at,
         order_items=order_items,
         customer=customer,
     )

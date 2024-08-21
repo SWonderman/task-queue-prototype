@@ -8,6 +8,12 @@ app = Celery("queueproto")
 
 app.config_from_object("config.celery_config")
 
+app.autodiscover_tasks(
+    [
+       "core",
+    ]
+)
+
 @app.task(bind=True, ignore_result=True)
 def health_check(self):
    print(f"Request {self.request!r}")

@@ -15,13 +15,13 @@ def handle_orders(order_ids: List[str]) -> None:
         logger.error(msg="No order IDs were passed to handle orders function.")
         return
 
-    orders: QuerySet[Order] = Order.objects.filter(order_id__in=order_ids)
+    orders: QuerySet[Order] = Order.objects.filter(id__in=order_ids)
     if len(orders) == 0:
         logger.error(msg="No orders were found for the provided IDs")
         return
 
     for order in orders:
-        handle_order.delay(order.order_id)
+        handle_order.delay(order.id)
 
 
 @shared_task
@@ -41,7 +41,7 @@ def handle_order(order_id: str) -> None:
     # TODO: handle error/fail path
 
     OrderHandlingProcess.objects.create(
-        status=OrderHandlingProcess.Status.SUCCEDED,
+        status=OrderHandlingProcess.Status.SUCCEEDED,
         state=OrderHandlingProcess.State.HANDLED,
         started_at=started_at,
         finished_at=now(),

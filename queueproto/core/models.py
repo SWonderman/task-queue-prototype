@@ -9,7 +9,12 @@ from django.utils.timezone import now, make_aware
 from django.utils.translation import gettext_lazy as _
 
 from core.marketplace import generate_order, generate_order_shipment
-from core.definitions import Order as OrderDefinition, Error, Result, OrderShipment as OrderShipmentDefinition
+from core.definitions import (
+    Order as OrderDefinition,
+    Error,
+    Result,
+    OrderShipment as OrderShipmentDefinition,
+)
 
 
 class BaseModel(models.Model):
@@ -29,7 +34,9 @@ class Customer(BaseModel):
     zip_code = models.TextField(max_length=50)
     country = models.TextField(max_length=125)
 
-    order = models.OneToOneField("Order", related_name="customer", on_delete=models.CASCADE)
+    order = models.OneToOneField(
+        "Order", related_name="customer", on_delete=models.CASCADE
+    )
 
     @property
     def full_name(self) -> str:
@@ -43,7 +50,9 @@ class OrderItem(BaseModel):
     price = models.DecimalField(decimal_places=4, max_digits=19)
     quantity = models.PositiveSmallIntegerField()
 
-    order = models.ForeignKey("Order", related_name="order_items", on_delete=models.CASCADE)
+    order = models.ForeignKey(
+        "Order", related_name="order_items", on_delete=models.CASCADE
+    )
 
 
 class OrderShipment(BaseModel):
@@ -51,10 +60,18 @@ class OrderShipment(BaseModel):
     carrier_name = models.TextField(max_length=125)
     carrier_code = models.TextField(max_length=50)
 
-    order = models.OneToOneField("Order", related_name="shipment", on_delete=models.CASCADE, null=True, blank=True)
+    order = models.OneToOneField(
+        "Order",
+        related_name="shipment",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
     @classmethod
-    def create_shipment_for_order(cls, order: "Order", event_queue, event_queue_key) -> "OrderShipment":
+    def create_shipment_for_order(
+        cls, order: "Order", event_queue, event_queue_key
+    ) -> "OrderShipment":
         started_at = now()
 
         shipment_data: OrderShipmentDefinition = generate_order_shipment()
@@ -66,7 +83,7 @@ class OrderShipment(BaseModel):
         )
 
         # NOTE: just simulate a work of sending an API request and waiting for response
-        #time.sleep(random.uniform(0.1, 0.5))
+        # time.sleep(random.uniform(0.1, 0.5))
         time.sleep(0.5)
 
         OrderHandlingProcess.objects.create(
@@ -80,7 +97,7 @@ class OrderShipment(BaseModel):
         event_queue.enque_processing_status_event(
             order_id=str(order.id),
             status="GENERATING SHIPMENT",
-            event_queue=event_queue_key
+            event_queue=event_queue_key,
         )
 
         # TODO: it might be a good idea to return just created handling process
@@ -107,7 +124,13 @@ class OrderHandlingProcess(BaseModel):
     started_at = models.DateTimeField()
     finished_at = models.DateTimeField()
 
-    order = models.ForeignKey("Order", related_name="handling_processes", on_delete=models.CASCADE, null=True, blank=True)
+    order = models.ForeignKey(
+        "Order",
+        related_name="handling_processes",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
 
 class Order(BaseModel):
@@ -128,7 +151,9 @@ class Order(BaseModel):
         if to_generate <= 0:
             to_generate = 1
 
-        fake_orders: List[OrderDefinition] = [generate_order() for _ in range(to_generate)]
+        fake_orders: List[OrderDefinition] = [
+            generate_order() for _ in range(to_generate)
+        ]
 
         orders: List[Order] = []
         created_orders: List[Order] = []
@@ -148,38 +173,46 @@ class Order(BaseModel):
                     )
                     orders.append(order)
 
-                    order_items.extend([
-                        OrderItem(
-                            product_sku=order_item.product_sku,
-                            product_title=order_item.product_title,
-                            product_media_url=order_item.product_media_url,
-                            price=order_item.price,
-                            quantity=order_item.quantity,
+                    order_items.extend(
+                        [
+                            OrderItem(
+                                product_sku=order_item.product_sku,
+                                product_title=order_item.product_title,
+                                product_media_url=order_item.product_media_url,
+                                price=order_item.price,
+                                quantity=order_item.quantity,
+                                order=order,
+                            )
+                            for order_item in fake_order.order_items
+                        ]
+                    )
+
+                    customer = customers.append(
+                        Customer(
+                            first_name=fake_order.customer.first_name,
+                            last_name=fake_order.customer.last_name,
+                            address1=fake_order.customer.address1,
+                            address2=fake_order.customer.address2,
+                            zip_code=fake_order.customer.zip_code,
+                            country=fake_order.customer.country,
                             order=order,
                         )
-                    for order_item in fake_order.order_items
-                    ])
+                    )
 
-                    customer = customers.append(Customer(
-                        first_name=fake_order.customer.first_name,
-                        last_name=fake_order.customer.last_name,
-                        address1=fake_order.customer.address1,
-                        address2=fake_order.customer.address2,
-                        zip_code=fake_order.customer.zip_code,
-                        country=fake_order.customer.country,
-                        order=order,
-                    ))
-
-                    order_handling_processes.append(OrderHandlingProcess(
-                        status=OrderHandlingProcess.Status.SUCCEEDED,
-                        state=OrderHandlingProcess.State.WAITING,
-                        started_at=now(),
-                        finished_at=now(),
-                        order=order,
-                    ))
+                    order_handling_processes.append(
+                        OrderHandlingProcess(
+                            status=OrderHandlingProcess.Status.SUCCEEDED,
+                            state=OrderHandlingProcess.State.WAITING,
+                            started_at=now(),
+                            finished_at=now(),
+                            order=order,
+                        )
+                    )
 
                 except Exception as e:
-                    failed.append(Error(message=f"Could not create fake order. Error: {e}"))
+                    failed.append(
+                        Error(message=f"Could not create fake order. Error: {e}")
+                    )
                     continue
 
         if orders:
@@ -214,7 +247,7 @@ class Order(BaseModel):
         event_queue.enque_processing_status_event(
             order_id=str(order.id),
             status="SENDING TRACKING",
-            event_queue=event_queue_key
+            event_queue=event_queue_key,
         )
 
     @classmethod
@@ -242,10 +275,16 @@ class Order(BaseModel):
         )
 
     @classmethod
-    def get_latest_handling_process_for_each_order(cls, orders: Iterable["Order"]) -> Dict["Order", Optional[OrderHandlingProcess]]:
-        handling_processes: QuerySet[OrderHandlingProcess] = OrderHandlingProcess.objects.filter(order__in=orders)
+    def get_latest_handling_process_for_each_order(
+        cls, orders: Iterable["Order"]
+    ) -> Dict["Order", Optional[OrderHandlingProcess]]:
+        handling_processes: QuerySet[OrderHandlingProcess] = (
+            OrderHandlingProcess.objects.filter(order__in=orders)
+        )
         order_latest_handling_processes = dict()
         for order in orders:
-            order_latest_handling_processes[order] = handling_processes.filter(order=order).order_by("created_at").last()
+            order_latest_handling_processes[order] = (
+                handling_processes.filter(order=order).order_by("created_at").last()
+            )
 
         return order_latest_handling_processes

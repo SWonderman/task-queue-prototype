@@ -18,9 +18,9 @@ class Result(Generic[T]):
 
 
 class OrderState(str, Enum):
-   SHIPPING = "SHIPPING"
-   SHIPPED = "SHIPPED"
-   CANCELED = "CANCELED"
+    SHIPPING = "SHIPPING"
+    SHIPPED = "SHIPPED"
+    CANCELED = "CANCELED"
 
 
 @dataclass
@@ -51,10 +51,10 @@ class OrderShipment:
 
 @dataclass
 class Order:
-   total_price: float
-   total_quantity: int
-   state: OrderState
-   currency_iso_code: str
-   placed_at: datetime
-   order_items: List[OrderItem]
-   customer: Customer
+    total_price: float
+    total_quantity: int
+    state: OrderState
+    currency_iso_code: str
+    placed_at: datetime
+    order_items: List[OrderItem]
+    customer: Customer

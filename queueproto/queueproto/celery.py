@@ -10,10 +10,11 @@ app.config_from_object("config.celery_config")
 
 app.autodiscover_tasks(
     [
-       "core",
+        "core",
     ]
 )
 
+
 @app.task(bind=True, ignore_result=True)
 def health_check(self):
-   print(f"Request {self.request!r}")
+    print(f"Request {self.request!r}")

@@ -12,6 +12,7 @@ from core.models import Order
 
 class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
@@ -20,7 +21,7 @@ class Singleton(type):
 
 class OrderEventsQueue(metaclass=Singleton):
     def __init__(self):
-       self.recently_added_orders: Deque[Order] = deque()
+        self.recently_added_orders: Deque[Order] = deque()
 
     def enque_orders(self, orders: Iterable[Order]) -> None:
         for order in orders:
@@ -42,10 +43,16 @@ class OrderProcessingEventQueue(metaclass=Singleton):
         self._event_queue_key = "order_processing_status_event_queue"
         self._connection = get_redis_connection("default")
 
-    def enque_processing_status_event(self, order_id: str, status: str, event_queue: EventQueueKey) -> None:
-        self._connection.lpush(event_queue.value, json.dumps({"order_id": order_id, "status": status}))
+    def enque_processing_status_event(
+        self, order_id: str, status: str, event_queue: EventQueueKey
+    ) -> None:
+        self._connection.lpush(
+            event_queue.value, json.dumps({"order_id": order_id, "status": status})
+        )
 
-    def pop_processing_status(self, event_queue: EventQueueKey) -> Optional[Dict[str, str]]:
+    def pop_processing_status(
+        self, event_queue: EventQueueKey
+    ) -> Optional[Dict[str, str]]:
         event = self._connection.rpop(event_queue.value)
 
         if not event:

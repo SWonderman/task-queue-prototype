@@ -120,7 +120,9 @@ def generate_order_shipment() -> OrderShipment:
 
 def generate_order() -> Order:
     customer: Customer = generate_customer()
-    order_items: List[OrderItem] = [generate_order_item() for _ in range(random.randint(1, 5))]
+    order_items: List[OrderItem] = [
+        generate_order_item() for _ in range(random.randint(1, 5))
+    ]
 
     currency_iso_codes = ["SEK", "PLN", "DKK", "EUR", "NOK"]
 
@@ -141,7 +143,9 @@ def generate_order() -> Order:
         total_price=sum([order_item.price for order_item in order_items]),
         total_quantity=sum([order_item.quantity for order_item in order_items]),
         state=OrderState.SHIPPING,
-        currency_iso_code=currency_iso_codes[random.randint(0, len(currency_iso_codes) - 1)],
+        currency_iso_code=currency_iso_codes[
+            random.randint(0, len(currency_iso_codes) - 1)
+        ],
         placed_at=placed_at,
         order_items=order_items,
         customer=customer,

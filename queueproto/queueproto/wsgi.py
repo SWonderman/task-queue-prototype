@@ -24,7 +24,9 @@ application = get_wsgi_application()
 fastapp_v1_root = "/api/v1"
 fastapp_v1 = FastAPI()
 
-fastapp_v1.mount("/static", StaticFiles(directory=settings.BASE_DIR / "static"), name="static")
+fastapp_v1.mount(
+    "/static", StaticFiles(directory=settings.BASE_DIR / "static"), name="static"
+)
 
 origins = [
     "http://localhost:8000/",
@@ -43,9 +45,8 @@ fastapp_v1.add_middleware(
 
 from api.v1.routers.core import router as queue_router
 
-fastapp_v1.include_router(
-    queue_router, prefix=f"{fastapp_v1_root}/core"
-)
+fastapp_v1.include_router(queue_router, prefix=f"{fastapp_v1_root}/core")
+
 
 @fastapp_v1.get(f"{fastapp_v1_root}/healthcheck", include_in_schema=False)
 def healthcheck():

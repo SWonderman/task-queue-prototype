@@ -23,14 +23,14 @@ class Command(BaseCommand):
 
         if failed:
             self.stdout.write(
-                self.style.WARNING(f"It was not possible to generate and add all orders. Errors: {len(failed)}.")
+                self.style.WARNING(
+                    f"It was not possible to generate and add all orders. Errors: {len(failed)}."
+                )
             )
-            [
-                self.stdout.write(
-                    self.style.ERROR(error.message)
-                ) for error in failed
-            ]
+            [self.stdout.write(self.style.ERROR(error.message)) for error in failed]
         else:
             self.stdout.write(
-                self.style.SUCCESS(f"{to_generate} orders were generated and added successfully.")
+                self.style.SUCCESS(
+                    f"{to_generate} orders were generated and added successfully."
+                )
             )

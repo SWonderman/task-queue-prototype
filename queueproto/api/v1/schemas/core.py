@@ -12,7 +12,7 @@ class ResponseWithPagination(BaseModel, Generic[T]):
 
 
 class Error(BaseModel):
-   message: str
+    message: str
 
 
 class ErrorResponse(BaseModel):

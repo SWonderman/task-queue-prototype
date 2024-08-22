@@ -6,7 +6,9 @@ from api.v1.schemas import order as order_schema
 
 
 def convert_db_order_to_schema(order: Order) -> order_schema.Order:
-    latest_order_handling = OrderHandlingProcess.objects.filter(order=order).order_by("created_at").last()
+    latest_order_handling = (
+        OrderHandlingProcess.objects.filter(order=order).order_by("created_at").last()
+    )
     latest_order_handling_schema = None
     if latest_order_handling:
         latest_order_handling_schema = order_schema.OrderHandlingProcess(
@@ -38,7 +40,8 @@ def convert_db_order_to_schema(order: Order) -> order_schema.Order:
                 product_media_url=order_item.product_media_url,
                 price=float(order_item.price),
                 quantity=int(order_item.quantity),
-            ) for order_item in order.order_items.all()
+            )
+            for order_item in order.order_items.all()
         ],
         customer=order_schema.Customer(
             id=str(order.customer.id),

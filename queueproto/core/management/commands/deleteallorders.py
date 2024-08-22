@@ -13,6 +13,4 @@ class Command(BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error while deleting orders: {e}."))
         else:
-            self.stdout.write(
-                self.style.SUCCESS(f"{orders_count} orders deleted.")
-            )
+            self.stdout.write(self.style.SUCCESS(f"{orders_count} orders deleted."))

@@ -6,6 +6,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 
 from core.models import Order, OrderShipment, OrderHandlingProcess
+from core.events import OrderProcessingStatusEventQueue, OrderProcessingStatusEventQueue
 
 logger = get_task_logger(__name__)
 
@@ -20,6 +21,10 @@ def handle_orders(order_ids: List[str]) -> None:
         logger.error(msg="No orders were found for the provided IDs")
         return
 
+    event_queue = OrderProcessingStatusEventQueue()
+    for order in orders:
+        event_queue.enque_processing_status_event(order_id=str(order.id), status="QUEUED")
+
     for order in orders:
         handle_order.delay(order.id)
 
@@ -32,6 +37,9 @@ def handle_order(order_id: str) -> None:
         logger.error(msg=f"Error while handling order: order with ID `{order_id}` does not exist.")
         return
 
+    event_queue = OrderProcessingStatusEventQueue()
+    event_queue.enque_processing_status_event(order_id=str(order.id), status="PROCESSING")
+
     started_at = now()
 
     created_shipment = OrderShipment.create_shipment_for_order(order)
@@ -39,6 +47,8 @@ def handle_order(order_id: str) -> None:
     Order.mark_order_as_shipped(order)
 
     # TODO: handle error/fail path
+
+    event_queue.enque_processing_status_event(order_id=str(order.id), status="PROCESSED")
 
     OrderHandlingProcess.objects.create(
         status=OrderHandlingProcess.Status.SUCCEEDED,

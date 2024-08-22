@@ -1,3 +1,5 @@
+from typing import Dict
+
 from core.models import Order, OrderHandlingProcess
 
 from api.v1.schemas import order as order_schema

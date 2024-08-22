@@ -5,9 +5,12 @@ import {
 } from "./utils.js";
 
 const order_event_source = new EventSource(`${API_URL}/core/orders/stream`);
+const order_processing_status_event_source = new EventSource(
+  `${API_URL}/core/orders/processing/status/stream`,
+);
 
 order_event_source.onopen = () => {
-  console.log("Connected to the SSE.");
+  console.log("Connecting to the SSE.");
 };
 
 order_event_source.addEventListener("newOrders", async function (event) {
@@ -17,6 +20,21 @@ order_event_source.addEventListener("newOrders", async function (event) {
     console.error("Could not get event data:", error);
   }
 });
+
+order_processing_status_event_source.onopen = () => {
+  console.log("Connecting to the monitoring orders processing status SSE.");
+};
+
+order_processing_status_event_source.addEventListener(
+  "updatedOrderProcessingStatus",
+  function (event) {
+    try {
+      updateOrdersProcessingStatus(JSON.parse(event.data));
+    } catch (error) {
+      console.error(error);
+    }
+  },
+);
 
 async function updateOrdersTable(orderData) {
   const ordersTableBody = document.querySelector("#orders-table tbody");
@@ -91,10 +109,11 @@ async function updateOrdersTable(orderData) {
 
   const tdCol8 = document.createElement("td");
   tdCol8.className = "px-6 py-4 text-center";
-  tdCol8.innerHTML =
+  const latestHandlingProcessState =
     orderData["latest_handling_process"] != null
       ? orderData["latest_handling_process"]["state"]
       : "-";
+  tdCol8.innerHTML = `<p>${latestHandlingProcessState}</p><p id="processing-status-${orderData["id"]}" class="text-xs text-gray-500"></p>`;
 
   tr.appendChild(tdCol8);
 
@@ -128,4 +147,16 @@ async function updateOrdersTable(orderData) {
 
   // Let the animation finish playing
   await new Promise((resolve) => setTimeout(resolve, 500));
+}
+
+function updateOrdersProcessingStatus(orderProcessingStatusData) {
+  const processingStatusParagraph = document.getElementById(
+    "processing-status-" + orderProcessingStatusData["order_id"],
+  );
+  if (!processingStatusParagraph) {
+    console.error("Processing status pragraph was not found");
+    return;
+  }
+
+  processingStatusParagraph.innerHTML = orderProcessingStatusData["status"];
 }

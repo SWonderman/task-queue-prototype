@@ -93,6 +93,7 @@
                         {% with lp=lastest_handling_processes|getvalue:order %}
                             {% if lp %}
                                 <p>{{ lp.state }}</p>
+                                <p id="processing-status-{{ order.id }}" class="text-xs text-gray-500"></p>
                             {% else %}
                                 <p>-</p>
                             {% endif %}

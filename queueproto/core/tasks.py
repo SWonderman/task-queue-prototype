@@ -6,7 +6,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 
 from core.models import Order, OrderShipment, OrderHandlingProcess
-from core.events import OrderProcessingStatusEventQueue, OrderProcessingStatusEventQueue
+from core.events import OrderProcessingEventQueue
 
 logger = get_task_logger(__name__)
 
@@ -21,9 +21,9 @@ def handle_orders(order_ids: List[str]) -> None:
         logger.error(msg="No orders were found for the provided IDs")
         return
 
-    event_queue = OrderProcessingStatusEventQueue()
+    event_queue: OrderProcessingEventQueue = OrderProcessingEventQueue()
     for order in orders:
-        event_queue.enque_processing_status_event(order_id=str(order.id), status="QUEUED")
+        event_queue.enque_processing_status_event(order_id=str(order.id), status="QUEUED", event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT)
 
     for order in orders:
         handle_order.delay(order.id)
@@ -37,18 +37,32 @@ def handle_order(order_id: str) -> None:
         logger.error(msg=f"Error while handling order: order with ID `{order_id}` does not exist.")
         return
 
-    event_queue = OrderProcessingStatusEventQueue()
-    event_queue.enque_processing_status_event(order_id=str(order.id), status="PROCESSING")
+    event_queue = OrderProcessingEventQueue()
+    event_queue.enque_processing_status_event(
+        order_id=str(order.id),
+        status="PROCESSING",
+        event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT
+    )
 
     started_at = now()
 
-    created_shipment = OrderShipment.create_shipment_for_order(order)
-    Order.send_back_tracking_number(order)
-    Order.mark_order_as_shipped(order)
+    created_shipment = OrderShipment.create_shipment_for_order(order, event_queue, OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS)
+    Order.send_back_tracking_number(order, event_queue, OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS)
+    Order.mark_order_as_shipped(order, event_queue, OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS)
 
     # TODO: handle error/fail path
 
-    event_queue.enque_processing_status_event(order_id=str(order.id), status="PROCESSED")
+    event_queue.enque_processing_status_event(
+        order_id=str(order.id),
+        status="PROCESSED",
+        event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT
+    )
+
+    event_queue.enque_processing_status_event(
+        order_id=str(order.id),
+        status="HANDLED",
+        event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
+    )
 
     OrderHandlingProcess.objects.create(
         status=OrderHandlingProcess.Status.SUCCEEDED,

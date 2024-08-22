@@ -1,4 +1,5 @@
 import json
+from enum import Enum
 from typing import Deque, Optional, Iterable, List, Dict
 from collections import deque
 
@@ -32,21 +33,25 @@ class OrderEventsQueue(metaclass=Singleton):
         return len(self.recently_added_orders) > 0
 
 
-class OrderProcessingStatusEventQueue(metaclass=Singleton):
+class OrderProcessingEventQueue(metaclass=Singleton):
+    class EventQueueKey(str, Enum):
+        PROCESSING_STATUS_EVENT = "order_processing_status_event_queue"
+        HANDLING_PROCESS = "order_handling_process_event_queue"
+
     def __init__(self):
         self._event_queue_key = "order_processing_status_event_queue"
         self._connection = get_redis_connection("default")
 
-    def enque_processing_status_event(self, order_id: str, status: str) -> None:
-        self._connection.lpush(self._event_queue_key, json.dumps({"order_id": order_id, "status": status}))
+    def enque_processing_status_event(self, order_id: str, status: str, event_queue: EventQueueKey) -> None:
+        self._connection.lpush(event_queue.value, json.dumps({"order_id": order_id, "status": status}))
 
-    def pop_processing_status(self) -> Optional[Dict[str, str]]:
-        event = self._connection.rpop(self._event_queue_key)
+    def pop_processing_status(self, event_queue: EventQueueKey) -> Optional[Dict[str, str]]:
+        event = self._connection.rpop(event_queue.value)
 
         if not event:
             return None
 
         return json.loads(event)
 
-    def has_items(self) -> bool:
-        return len(self._connection.lrange(self._event_queue_key, 0, -1)) > 0
+    def has_items(self, event_queue: EventQueueKey) -> bool:
+        return len(self._connection.lrange(event_queue.value, 0, -1)) > 0

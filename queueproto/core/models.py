@@ -54,7 +54,7 @@ class OrderShipment(BaseModel):
     order = models.OneToOneField("Order", related_name="shipment", on_delete=models.CASCADE, null=True, blank=True)
 
     @classmethod
-    def create_shipment_for_order(cls, order: "Order") -> "OrderShipment":
+    def create_shipment_for_order(cls, order: "Order", event_queue, event_queue_key) -> "OrderShipment":
         started_at = now()
 
         shipment_data: OrderShipmentDefinition = generate_order_shipment()
@@ -75,6 +75,12 @@ class OrderShipment(BaseModel):
             started_at=started_at,
             finished_at=now(),
             order=order,
+        )
+
+        event_queue.enque_processing_status_event(
+            order_id=str(order.id),
+            status="GENERATING SHIPMENT",
+            event_queue=event_queue_key
         )
 
         # TODO: it might be a good idea to return just created handling process
@@ -188,7 +194,7 @@ class Order(BaseModel):
         )
 
     @classmethod
-    def send_back_tracking_number(cls, order: "Order"):
+    def send_back_tracking_number(cls, order: "Order", event_queue, event_queue_key):
         started_at = now()
 
         # NOTE: just simulate a work of sending an API request and waiting for response
@@ -205,8 +211,14 @@ class Order(BaseModel):
             order=order,
         )
 
+        event_queue.enque_processing_status_event(
+            order_id=str(order.id),
+            status="SENDING TRACKING",
+            event_queue=event_queue_key
+        )
+
     @classmethod
-    def mark_order_as_shipped(cls, order: "Order"):
+    def mark_order_as_shipped(cls, order: "Order", event_queue, event_queue_key):
         started_at = now()
 
         # NOTE: just simulate a work of sending an API request and waiting for response
@@ -221,6 +233,12 @@ class Order(BaseModel):
             started_at=started_at,
             finished_at=now(),
             order=order,
+        )
+
+        event_queue.enque_processing_status_event(
+            order_id=str(order.id),
+            status="MARKING AS SHIPPED",
+            event_queue=event_queue_key,
         )
 
     @classmethod

@@ -8,6 +8,9 @@ const order_event_source = new EventSource(`${API_URL}/core/orders/stream`);
 const order_processing_status_event_source = new EventSource(
   `${API_URL}/core/orders/processing/status/stream`,
 );
+const order_handling_status_event_source = new EventSource(
+  `${API_URL}/core/orders/handling/status/stream`,
+);
 
 order_event_source.onopen = () => {
   console.log("Connecting to the SSE.");
@@ -30,6 +33,21 @@ order_processing_status_event_source.addEventListener(
   function (event) {
     try {
       updateOrdersProcessingStatus(JSON.parse(event.data));
+    } catch (error) {
+      console.error(error);
+    }
+  },
+);
+
+order_handling_status_event_source.onopen = () => {
+  console.log("Connecting to the monitoring orders handling status SSE.");
+};
+
+order_handling_status_event_source.addEventListener(
+  "updatedOrderHandlingStatus",
+  function (event) {
+    try {
+      console.log(JSON.parse(event.data));
     } catch (error) {
       console.error(error);
     }

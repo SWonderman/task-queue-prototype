@@ -2,7 +2,7 @@ import math
 import asyncio
 from typing import List, Annotated, AsyncGenerator, Set
 
-from fastapi import APIRouter, Path, Body, Request
+from fastapi import APIRouter, Path, Body, Request, Query
 from fastapi.responses import StreamingResponse
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
@@ -74,7 +74,7 @@ async def stream_orders(request: Request):
 
 
 @router.post("/orders", response_model=core_schema.ErrorResponse)
-def generate_orders(generate: Annotated[int, Path(ge=1)] = 5):
+def generate_orders(generate: Annotated[int, Query(ge=1)] = 5):
     result: Result[List[Order]] = Order.generate_and_add_fake_orders(to_generate=generate)
 
     if result.result and len(result.result) > 0:

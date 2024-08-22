@@ -91,25 +91,34 @@ async function updateOrdersTable(orderData) {
 
   const tdCol8 = document.createElement("td");
   tdCol8.className = "px-6 py-4 text-center";
+  tdCol8.innerHTML =
+    orderData["latest_handling_process"] != null
+      ? orderData["latest_handling_process"]["state"]
+      : "-";
+
+  tr.appendChild(tdCol8);
+
+  const tdCol9 = document.createElement("td");
+  tdCol9.className = "px-6 py-4 text-center";
 
   const totalQuantity = orderData["total_quantity"];
   let totalQuantityDescription = "item";
   if (totalQuantity > 1) {
     totalQuantityDescription = "items";
   }
-  tdCol8.innerHTML = `${totalQuantity} ${totalQuantityDescription}`;
-  tr.appendChild(tdCol8);
+  tdCol9.innerHTML = `${totalQuantity} ${totalQuantityDescription}`;
+  tr.appendChild(tdCol9);
 
-  const tdCol9 = document.createElement("td");
-  tdCol9.className = "px-6 py-4 text-center";
+  const tdCol10 = document.createElement("td");
+  tdCol10.className = "px-6 py-4 text-center";
 
   const actionLink = document.createElement("a");
   actionLink.className = "font-medium text-blue-600 hover:underline";
   actionLink.innerHTML = "Edit";
   actionLink.href = "#";
 
-  tdCol9.appendChild(actionLink);
-  tr.appendChild(tdCol9);
+  tdCol10.appendChild(actionLink);
+  tr.appendChild(tdCol10);
 
   ordersTableBody.prepend(tr);
 

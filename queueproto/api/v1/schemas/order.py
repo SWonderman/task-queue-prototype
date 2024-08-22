@@ -2,8 +2,6 @@ import datetime
 from typing import Optional, List
 from pydantic import BaseModel, field_validator
 
-from core.definitions import OrderState
-
 
 class BaseSchema(BaseModel):
     id: str
@@ -28,6 +26,13 @@ class OrderItem(BaseSchema):
     quantity: int
 
 
+class OrderHandlingProcess(BaseSchema):
+    status: str
+    state: str
+    started_at: str
+    finished_at: str
+
+
 class Order(BaseSchema):
     total_price: float
     total_quantity: int
@@ -36,6 +41,7 @@ class Order(BaseSchema):
     placed_at: str
     order_items: List[OrderItem]
     customer: Customer
+    latest_handling_process: Optional[OrderHandlingProcess]
 
 
 class OrderIds(BaseModel):

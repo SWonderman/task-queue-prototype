@@ -1,8 +1,22 @@
-from core.models import Order
+from core.models import Order, OrderHandlingProcess
+
 from api.v1.schemas import order as order_schema
 
 
 def convert_db_order_to_schema(order: Order) -> order_schema.Order:
+    latest_order_handling = OrderHandlingProcess.objects.filter(order=order).order_by("created_at").last()
+    latest_order_handling_schema = None
+    if latest_order_handling:
+        latest_order_handling_schema = order_schema.OrderHandlingProcess(
+            id=str(latest_order_handling.id),
+            created_at=str(latest_order_handling.created_at),
+            updated_at=str(latest_order_handling.updated_at),
+            status=str(latest_order_handling.status),
+            state=str(latest_order_handling.state),
+            started_at=str(latest_order_handling.started_at),
+            finished_at=str(latest_order_handling.finished_at),
+        )
+
     return order_schema.Order(
         id=str(order.id),
         created_at=str(order.created_at),
@@ -34,5 +48,6 @@ def convert_db_order_to_schema(order: Order) -> order_schema.Order:
             address2=order.customer.address2,
             zip_code=order.customer.zip_code,
             country=order.customer.country,
-        )
+        ),
+        latest_handling_process=latest_order_handling_schema,
     )

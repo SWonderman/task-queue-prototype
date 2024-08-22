@@ -47,7 +47,7 @@ order_handling_status_event_source.addEventListener(
   "updatedOrderHandlingStatus",
   function (event) {
     try {
-      console.log(JSON.parse(event.data));
+      updateOrdersHandlingStatus(JSON.parse(event.data));
     } catch (error) {
       console.error(error);
     }
@@ -126,12 +126,15 @@ async function updateOrdersTable(orderData) {
   tr.appendChild(tdCol7);
 
   const tdCol8 = document.createElement("td");
-  tdCol8.className = "px-6 py-4 text-center";
+  tdCol8.className = "px-2 py-4 text-center";
   const latestHandlingProcessState =
     orderData["latest_handling_process"] != null
       ? orderData["latest_handling_process"]["state"]
       : "-";
-  tdCol8.innerHTML = `<p>${latestHandlingProcessState}</p><p id="processing-status-${orderData["id"]}" class="text-xs text-gray-500"></p>`;
+  tdCol8.innerHTML = `
+    <p id="handling-status-${orderData["id"]}" class="pb-1 text-xs text-gray-600">${latestHandlingProcessState}</p>
+    <p id="processing-status-${orderData["id"]}" class="text-xs text-gray-400"></p>
+  `;
 
   tr.appendChild(tdCol8);
 
@@ -177,4 +180,16 @@ function updateOrdersProcessingStatus(orderProcessingStatusData) {
   }
 
   processingStatusParagraph.innerHTML = orderProcessingStatusData["status"];
+}
+
+function updateOrdersHandlingStatus(orderHandlingStatusData) {
+  const handlingStatusParagraph = document.getElementById(
+    "handling-status-" + orderHandlingStatusData["order_id"],
+  );
+  if (!handlingStatusParagraph) {
+    console.error("Handling status paragraph was not found");
+    return;
+  }
+
+  handlingStatusParagraph.innerHTML = orderHandlingStatusData["status"];
 }

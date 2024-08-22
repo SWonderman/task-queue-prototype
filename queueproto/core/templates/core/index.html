@@ -89,11 +89,11 @@
                             {{ order.state }}
                         {% endif %}
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-2 py-4 text-center">
                         {% with lp=lastest_handling_processes|getvalue:order %}
                             {% if lp %}
-                                <p>{{ lp.state }}</p>
-                                <p id="processing-status-{{ order.id }}" class="text-xs text-gray-500"></p>
+                                <p id="handling-status-{{ order.id }}" class="pb-1 text-xs text-gray-600">{{ lp.state }}</p>
+                                <p id="processing-status-{{ order.id }}" class="text-xs text-gray-400"></p>
                             {% else %}
                                 <p>-</p>
                             {% endif %}

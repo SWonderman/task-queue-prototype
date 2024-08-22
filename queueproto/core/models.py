@@ -65,6 +65,10 @@ class OrderShipment(BaseModel):
             order=order,
         )
 
+        # NOTE: just simulate a work of sending an API request and waiting for response
+        #time.sleep(random.uniform(0.1, 0.5))
+        time.sleep(0.5)
+
         OrderHandlingProcess.objects.create(
             status=OrderHandlingProcess.Status.SUCCEEDED,
             state=OrderHandlingProcess.State.GENERATING_SHIPMENT,
@@ -188,7 +192,8 @@ class Order(BaseModel):
         started_at = now()
 
         # NOTE: just simulate a work of sending an API request and waiting for response
-        time.sleep(random.uniform(0.1, 0.5))
+        # time.sleep(random.uniform(0.1, 0.5))
+        time.sleep(0.5)
 
         # TODO: tracking cannot be sent if the order does not have shipment
 
@@ -205,7 +210,8 @@ class Order(BaseModel):
         started_at = now()
 
         # NOTE: just simulate a work of sending an API request and waiting for response
-        time.sleep(random.uniform(0.1, 0.5))
+        # time.sleep(random.uniform(0.1, 0.5))
+        time.sleep(0.5)
 
         # TODO: order cannot be marked as shipped if tracking information were not sent to back
 

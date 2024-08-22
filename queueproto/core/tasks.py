@@ -9,7 +9,7 @@ from core.models import Order, OrderShipment, OrderHandlingProcess
 
 logger = get_task_logger(__name__)
 
-@shared_task
+@shared_task(queue="single_worker_queue")
 def handle_orders(order_ids: List[str]) -> None:
     if len(order_ids) == 0:
         logger.error(msg="No order IDs were passed to handle orders function.")
@@ -24,7 +24,7 @@ def handle_orders(order_ids: List[str]) -> None:
         handle_order.delay(order.id)
 
 
-@shared_task
+@shared_task(queue="single_worker_queue")
 def handle_order(order_id: str) -> None:
     try:
         order = Order.objects.get(id=order_id)

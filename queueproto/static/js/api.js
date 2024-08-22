@@ -53,6 +53,10 @@ export async function handleOrders() {
           "Something went wrong: " + detail.msg,
         );
       });
+    } else {
+      notificationController.addNotification(
+        "Orders were added to the handle queue",
+      );
     }
   } catch (error) {
     notificationController.addNotification(

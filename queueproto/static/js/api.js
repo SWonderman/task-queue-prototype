@@ -8,9 +8,11 @@ export async function generateOrders() {
   try {
     const response = await fetch(url, { method: "POST" });
     const errorsResponse = await response.json();
-    if (errorsResponse.length > 0) {
+    if (errorsResponse && errorsResponse.errors.length > 0) {
       const errors = errorsResponse.errors;
-      errors.forEach((err) => notificationController.addNotification(err));
+      errors.forEach((err) =>
+        notificationController.addNotification(err.message),
+      );
     } else {
       notificationController.addNotification("Orders generated successfully");
     }

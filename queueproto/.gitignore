@@ -8,3 +8,4 @@ migrations/
 .env
 .env.docker
 *.sqlite3
+dump.rdb

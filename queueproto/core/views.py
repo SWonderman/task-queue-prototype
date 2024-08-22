@@ -14,11 +14,11 @@ def index(request):
     if page_number is None:
         page_number = 1
 
-    order_ids_to_their_handling_processes = Order.get_associated_handling_processes(orders=orders)
+    latest_handling_processes = Order.get_latest_handling_process_for_each_order(orders=orders)
 
     context = {
         "orders": page_orders,
-        "handling_processes": order_ids_to_their_handling_processes,
+        "lastest_handling_processes":  latest_handling_processes,
         "orders_count": orders.count(),
         "current_page": page_number,
         "pages_count": paginator.num_pages,

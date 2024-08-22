@@ -89,10 +89,13 @@
                         {% endif %}
                     </td>
                     <td class="px-6 py-4 text-center">
-                        {% for process in order.handling_processes.all %}
-                            {{ process.state }}
-                        {% endfor %}
-                        {{ handling_processes|getvalue:order.id }}
+                        {% with lp=lastest_handling_processes|getvalue:order %}
+                            {% if lp %}
+                                <p>{{ lp.state }}</p>
+                            {% else %}
+                                <p>-</p>
+                            {% endif %}
+                        {% endwith %}
                     </td>
                     <td class="px-6 py-4 text-center">
                         {% if order.total_quantity > 1 %}

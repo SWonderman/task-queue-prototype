@@ -4,6 +4,7 @@ import random
 from typing import List, Optional, Dict, Iterable
 
 from django.db import models, transaction
+from django.db.models import QuerySet
 from django.utils.timezone import now, make_aware
 from django.utils.translation import gettext_lazy as _
 
@@ -206,9 +207,10 @@ class Order(BaseModel):
         )
 
     @classmethod
-    def get_associated_handling_processes(cls, orders: Iterable["Order"]) -> Dict[str, List[OrderHandlingProcess]]:
-        order_ids_to_their_hadling_processes = dict()
+    def get_latest_handling_process_for_each_order(cls, orders: Iterable["Order"]) -> Dict["Order", Optional[OrderHandlingProcess]]:
+        handling_processes: QuerySet[OrderHandlingProcess] = OrderHandlingProcess.objects.filter(order__in=orders)
+        order_latest_handling_processes = dict()
         for order in orders:
-            order_ids_to_their_hadling_processes[order.id] = list(order.handling_processes.all())
+            order_latest_handling_processes[order] = handling_processes.filter(order=order).order_by("created_at").last()
 
-        return order_ids_to_their_hadling_processes
+        return order_latest_handling_processes

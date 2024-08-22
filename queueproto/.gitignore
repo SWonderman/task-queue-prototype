@@ -6,4 +6,5 @@ node_modules/
 migrations/
 
 .env
+.env.docker
 *.sqlite3

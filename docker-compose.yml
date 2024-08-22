@@ -9,7 +9,7 @@ services:
     ports:
       - 8000:8000
     env_file:
-      - ./queueproto/.env
+      - ./queueproto/.env.docker
     depends_on:
       - redis
 
@@ -21,7 +21,7 @@ services:
     volumes:
       - ./queueproto/:/usr/src/app/
     env_file:
-      - ./queueproto/.env
+      - ./queueproto/.env.docker
     depends_on:
       - redis
 
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./queueproto/:/usr/src/app/
     env_file:
-      - ./queueproto/.env
+      - ./queueproto/.env.docker
     depends_on:
       - redis
 

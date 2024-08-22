@@ -124,6 +124,7 @@ class Order(BaseModel):
         created_orders: List[Order] = []
         order_items: List[OrderItem] = []
         customers: List[Customer] = []
+        order_handling_processes: List[OrderHandlingProcess] = []
         failed: List[Error] = []
         with transaction.atomic():
             for fake_order in fake_orders:
@@ -158,6 +159,15 @@ class Order(BaseModel):
                         country=fake_order.customer.country,
                         order=order,
                     ))
+
+                    order_handling_processes.append(OrderHandlingProcess(
+                        status=OrderHandlingProcess.Status.SUCCEEDED,
+                        state=OrderHandlingProcess.State.WAITING,
+                        started_at=now(),
+                        finished_at=now(),
+                        order=order,
+                    ))
+
                 except Exception as e:
                     failed.append(Error(message=f"Could not create fake order. Error: {e}"))
                     continue
@@ -166,6 +176,7 @@ class Order(BaseModel):
             created_orders = cls.objects.bulk_create(orders)
             OrderItem.objects.bulk_create(order_items)
             Customer.objects.bulk_create(customers)
+            OrderHandlingProcess.objects.bulk_create(order_handling_processes)
 
         return Result(
             errors=failed,

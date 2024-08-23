@@ -4,6 +4,7 @@ CACHE/
 venv/
 node_modules/
 migrations/
+static/admin
 
 .env
 .env.docker

@@ -48,7 +48,6 @@ export async function handleOrders() {
     if (!response.ok) {
       const jsonResponse = await response.json();
       jsonResponse.detail.forEach((detail) => {
-        console.log(detail);
         notificationController.addNotification(
           "Something went wrong: " + detail.msg,
         );
@@ -61,6 +60,29 @@ export async function handleOrders() {
   } catch (error) {
     notificationController.addNotification(
       "Error occurred while handling orders",
+    );
+    console.error(error);
+  }
+}
+
+export async function getOrderFulfillmentHistory(orderId) {
+  const url = `${API_URL}/core/orders/${orderId}/fulfillment/history`;
+  try {
+    const response = await fetch(url);
+    const jsonResponse = await response.json();
+    if (!response.ok) {
+      jsonResponse.detail.forEach((detail) => {
+        notificationController.addNotification(
+          "Something went wrong: " + detail.msg,
+        );
+      });
+      return [];
+    } else {
+      return jsonResponse;
+    }
+  } catch (error) {
+    notificationController.addNotification(
+      "Error occurred while gettings orders fulfillment history",
     );
     console.error(error);
   }

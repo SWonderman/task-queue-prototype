@@ -4,6 +4,7 @@ import {
   truncateFloatToTwoDecimalPlaces,
   toTitleCase,
 } from "./utils.js";
+import { setClickEventToDisplayHandlingStatusModal } from "./dom.js";
 
 const order_event_source = new EventSource(`${API_URL}/core/orders/stream`);
 const order_processing_status_event_source = new EventSource(
@@ -147,6 +148,9 @@ async function updateOrdersTable(orderData) {
 
   const tdCol8 = document.createElement("td");
   tdCol8.className = "px-2 py-4 text-center";
+  tdCol8.setAttribute("data-order-id", orderData["id"]);
+  setClickEventToDisplayHandlingStatusModal(tdCol8);
+
   const latestHandlingProcessState =
     orderData["latest_handling_process"] != null
       ? toTitleCase(orderData["latest_handling_process"]["state"])

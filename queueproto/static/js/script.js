@@ -1,6 +1,10 @@
 import { generateOrders, handleOrders } from "./api.js";
 import { gotoNextPage, gotoPreviousPage } from "./pagination.js";
 import { toggleAllOrders } from "./utils.js";
+import {
+  setClickEventToDisplayHandlingStatusModal,
+  closeHandlingHistoryModal,
+} from "./dom.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const rootCheckbox = document.getElementById("root-checkbox");
@@ -28,5 +32,23 @@ document.addEventListener("DOMContentLoaded", () => {
   const paginationNextBtn = document.getElementById("pagination-next-btn");
   if (paginationNextBtn) {
     paginationNextBtn.addEventListener("click", gotoNextPage);
+  }
+
+  const closeHandlingStatusHistoryModalBtn =
+    document.getElementById("close-modal-btn");
+  if (closeHandlingStatusHistoryModalBtn) {
+    closeHandlingStatusHistoryModalBtn.addEventListener(
+      "click",
+      closeHandlingHistoryModal,
+    );
+  }
+
+  const handlingStatusCells = document.querySelectorAll(
+    ".handling-status-cell",
+  );
+  if (handlingStatusCells) {
+    handlingStatusCells.forEach((element) => {
+      setClickEventToDisplayHandlingStatusModal(element);
+    });
   }
 });

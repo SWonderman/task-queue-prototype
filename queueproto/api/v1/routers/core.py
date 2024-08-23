@@ -3,12 +3,12 @@ import asyncio
 import json
 from typing import List, Annotated, AsyncGenerator, Set, Optional, Dict
 
-from fastapi import APIRouter, Path, Body, Request, Query
+from fastapi import APIRouter, HTTPException, Path, Body, Request, Query
 from fastapi.responses import StreamingResponse
 from django.db.models import QuerySet
 from django.forms.models import model_to_dict
 
-from core.models import Order
+from core.models import Order, OrderHandlingProcess
 from core.events import OrderEventsQueue, OrderProcessingEventQueue
 from core.tasks import handle_orders
 from core.definitions import Result
@@ -205,6 +205,27 @@ def add_orders_to_handling_queue(ids: Annotated[order_schema.OrderIds, Body]):
     handle_orders.delay(
         order_ids=ids.order_ids,
     )
+
+
+@router.get("/orders/{id}/fulfillment/history", response_model=List[order_schema.OrderHandlingProcess])
+def get_order_fulfillment_history(id: Annotated[str, Path(title="Order ID")]):
+    try:
+        order = Order.objects.get(id=id)
+        handling_processes: QuerySet[OrderHandlingProcess] = order.handling_processes.all()
+    except Order.OrderDoesNotExist:
+        raise HTTPException(status_code=404, detail="Order was not found")
+
+    return [
+        order_schema.OrderHandlingProcess(
+            id=str(process.id),
+            created_at=str(process.created_at),
+            updated_at=str(process.updated_at),
+            status=str(process.status),
+            state=str(process.state),
+            started_at=str(process.started_at),
+            finished_at=str(process.finished_at),
+        ) for process in handling_processes
+    ]
 
 
 @router.on_event("shutdown")

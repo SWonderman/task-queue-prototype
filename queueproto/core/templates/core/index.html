@@ -6,6 +6,19 @@
 {% block content %}
     <ul id="notifications-box" class="flex flex-col absolute top-5 left-5 gap-6"></ul>
 
+    <div id="handling-status-history-modal" class="hidden absolute left-0 top-0 w-screen h-screen bg-opacity-40 bg-gray-800 z-50 flex items-top justify-center">
+        <div class="mt-32 py-4 px-6 w-[550px] max-h-[600px] bg-white rounded shadow-md overflow-y-scroll">
+            <div>
+                <div class="py-2 flex justify-between items-center border-b-2 border-gray-100">
+                    <h3 class="font-semibold text-md">Handling History</h3>
+                    <button id="close-modal-btn" class="w-7 h-7 text-center text-sm bg-gray-100 border border-gray-200 rounded-full hover:bg-gray-200">X</button>
+                </div>
+                <div class="py-4 flex flex-col gap-2" id="handling-status-pill-container">
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="p-6">
         <h1 class="text-xl font-semibold text-gray-700">Orders</h1>
     </div>
@@ -89,7 +102,7 @@
                             {{ order.state }}
                         {% endif %}
                     </td>
-                    <td class="px-2 py-4 text-center">
+                    <td class="px-2 py-4 text-center handling-status-cell" data-order-id="{{ order.id }}">
                         {% with lp=lastest_handling_processes|getvalue:order %}
                             {% if lp %}
                                 <p id="handling-status-{{ order.id }}" class="pb-1 text-xs text-gray-600">{{ lp.state|title }}</p>
@@ -140,5 +153,6 @@
     <script type="module" src="{% static 'js/notifications.js' %}"></script>
     <script type="module" src="{% static 'js/pagination.js' %}"></script>
     <script type="module" src="{% static 'js/api.js' %}"></script>
+    <script type="module" src="{% static 'js/dom.js' %}"></script>
     <script type="module" src="{% static 'js/script.js' %}"></script>
 {% endblock body-bottom %}

@@ -37,7 +37,7 @@ def handle_orders(order_ids: List[str]) -> None:
 @shared_task(queue="single_worker_queue")
 def handle_order(order_id: str) -> None:
     try:
-        order = Order.objects.get(id=order_id)
+        order: Order = Order.objects.get(id=order_id)
     except Order.DoesNotExist:
         logger.error(
             msg=f"Error while handling order: order with ID `{order_id}` does not exist."
@@ -77,6 +77,12 @@ def handle_order(order_id: str) -> None:
         event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS,
     )
 
+    event_queue.enque_processing_status_event(
+        order_id=str(order.id),
+        status="SHIPPED",
+        event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS,
+    )
+
     OrderHandlingProcess.objects.create(
         status=OrderHandlingProcess.Status.SUCCEEDED,
         state=OrderHandlingProcess.State.HANDLED,
@@ -84,3 +90,6 @@ def handle_order(order_id: str) -> None:
         finished_at=now(),
         order=order,
     )
+
+    order.state = Order.State.SHIPPED
+    order.save()

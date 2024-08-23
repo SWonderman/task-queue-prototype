@@ -2,6 +2,7 @@ import { API_URL } from "./settings.js";
 import {
   parseDateToDjangoFormat,
   truncateFloatToTwoDecimalPlaces,
+  toTitleCase,
 } from "./utils.js";
 
 const order_event_source = new EventSource(`${API_URL}/core/orders/stream`);
@@ -10,6 +11,9 @@ const order_processing_status_event_source = new EventSource(
 );
 const order_handling_status_event_source = new EventSource(
   `${API_URL}/core/orders/handling/status/stream`,
+);
+const order_fulfillment_status_event_source = new EventSource(
+  `${API_URL}/core/orders/fulfillment/status/stream`,
 );
 
 order_event_source.onopen = () => {
@@ -48,6 +52,21 @@ order_handling_status_event_source.addEventListener(
   function (event) {
     try {
       updateOrdersHandlingStatus(JSON.parse(event.data));
+    } catch (error) {
+      console.error(error);
+    }
+  },
+);
+
+order_fulfillment_status_event_source.onopen = () => {
+  console.log("Connecting to monitoring orders fulfillment status SSE.");
+};
+
+order_fulfillment_status_event_source.addEventListener(
+  "updatedOrderFulfillmentStatus",
+  function (event) {
+    try {
+      updateOrdersFulfillmentStatus(JSON.parse(event.data));
     } catch (error) {
       console.error(error);
     }
@@ -102,6 +121,7 @@ async function updateOrdersTable(orderData) {
 
   const tdCol7 = document.createElement("td");
   tdCol7.className = "px-6 py-4 text-center";
+  tdCol7.id = "fulfillment-status-" + orderData["id"];
 
   const stateDiv = document.createElement("div");
   stateDiv.className =
@@ -129,7 +149,7 @@ async function updateOrdersTable(orderData) {
   tdCol8.className = "px-2 py-4 text-center";
   const latestHandlingProcessState =
     orderData["latest_handling_process"] != null
-      ? orderData["latest_handling_process"]["state"]
+      ? toTitleCase(orderData["latest_handling_process"]["state"])
       : "-";
   tdCol8.innerHTML = `
     <p id="handling-status-${orderData["id"]}" class="pb-1 text-xs text-gray-600">${latestHandlingProcessState}</p>
@@ -179,7 +199,9 @@ function updateOrdersProcessingStatus(orderProcessingStatusData) {
     return;
   }
 
-  processingStatusParagraph.innerHTML = orderProcessingStatusData["status"];
+  processingStatusParagraph.innerHTML = toTitleCase(
+    orderProcessingStatusData["status"],
+  );
 }
 
 function updateOrdersHandlingStatus(orderHandlingStatusData) {
@@ -191,5 +213,51 @@ function updateOrdersHandlingStatus(orderHandlingStatusData) {
     return;
   }
 
-  handlingStatusParagraph.innerHTML = orderHandlingStatusData["status"];
+  handlingStatusParagraph.innerHTML = toTitleCase(
+    orderHandlingStatusData["status"],
+  );
+}
+
+function updateOrdersFulfillmentStatus(orderFulfillmentStatusData) {
+  const fulfillmentStatusTableCell = document.getElementById(
+    "fulfillment-status-" + orderFulfillmentStatusData["order_id"],
+  );
+  if (!fulfillmentStatusTableCell) {
+    console.error("Fulfillment status table cell was not found");
+    return;
+  }
+
+  let outerDivClass = "text-xs flex items-center justify-center";
+  let innerDivClass =
+    "w-[85px] flex flex-row items-center justify-center gap-2 p-1 border rounded-lg";
+  let spanClass = "w-[8px] h-[8px] rounded-full";
+  const paragraphClass = "font-semibold";
+
+  const fulfillmentStatus = orderFulfillmentStatusData["status"];
+  switch (fulfillmentStatus) {
+    case "CANCELED":
+      outerDivClass += " text-gray-500";
+      innerDivClass += " bg-gray-200 border-gray-300";
+      spanClass += " bg-gray-600";
+      break;
+    case "SHIPPED":
+      outerDivClass += " text-green-600";
+      innerDivClass += " bg-green-200 border-green-300";
+      spanClass += " bg-green-600";
+      break;
+    case "SHIPPING":
+      outerDivClass += " text-yellow-600";
+      innerDivClass += " bg-yellow-200 border-yellow-300";
+      spanClass += " bg-yellow-600";
+      break;
+  }
+
+  fulfillmentStatusTableCell.innerHTML = `
+    <div class="${outerDivClass}">
+      <div class="${innerDivClass}">
+        <span class="${spanClass}"></span>
+        <p class="${paragraphClass}">${toTitleCase(fulfillmentStatus)}</p>
+      </div>
+    </div>
+    `;
 }

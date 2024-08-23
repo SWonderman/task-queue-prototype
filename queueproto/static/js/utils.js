@@ -57,3 +57,10 @@ export function truncateFloatToTwoDecimalPlaces(number) {
 
   return number;
 }
+
+export function toTitleCase(content) {
+  return content
+    .split(" ")
+    .map((word) => word[0].toUpperCase() + word.substring(1).toLowerCase())
+    .join(" ");
+}

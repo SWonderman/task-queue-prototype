@@ -38,6 +38,7 @@ class OrderProcessingEventQueue(metaclass=Singleton):
     class EventQueueKey(str, Enum):
         PROCESSING_STATUS_EVENT = "order_processing_status_event_queue"
         HANDLING_PROCESS = "order_handling_process_event_queue"
+        FULFILLMENT_STATUS = "order_fulfillment_status_event_queue"
 
     def __init__(self):
         self._event_queue_key = "order_processing_status_event_queue"

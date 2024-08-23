@@ -117,6 +117,27 @@ async def order_handling_status_event_generator(
         await asyncio.sleep(0.5)
 
 
+async def order_fulfillment_status_event_generator(
+    request: Request, event_queue: OrderProcessingEventQueue
+) -> AsyncGenerator[str, None]:
+    while True:
+        if await request.is_disconnected():
+            break
+
+        if event_queue.has_items(
+            event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS
+        ):
+            processing_status_data: Optional[Dict[str, str]] = (
+                event_queue.pop_processing_status(
+                    event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS
+                )
+            )
+            if processing_status_data is None:
+                return
+            yield f"event: updatedOrderFulfillmentStatus\ndata: {json.dumps(processing_status_data)}\n\n"
+        await asyncio.sleep(0.5)
+
+
 @router.get("/orders/stream")
 async def stream_orders(request: Request):
     active_connections.add(request)
@@ -142,6 +163,17 @@ async def stream_orders_handling_status(request: Request):
     active_connections.add(request)
     return StreamingResponse(
         order_handling_status_event_generator(
+            request=request, event_queue=OrderProcessingEventQueue()
+        ),
+        media_type="text/event-stream",
+    )
+
+
+@router.get("/orders/fulfillment/status/stream")
+async def stream_orders_fulfilment_status(request: Request):
+    active_connections.add(request)
+    return StreamingResponse(
+        order_fulfillment_status_event_generator(
             request=request, event_queue=OrderProcessingEventQueue()
         ),
         media_type="text/event-stream",

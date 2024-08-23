@@ -63,7 +63,7 @@
                     <td class="px-6 py-4 text-center">
                         ${{ order.total_price|floatformat:2 }}
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-4 text-center" id="fulfillment-status-{{ order.id }}">
                         {% if order.state == "CANCELED" %}
                         <div class="text-xs text-gray-500 flex items-center justify-center">
                             <div class="w-[85px] flex flex-row items-center justify-center gap-2 p-1 bg-gray-200 border border-gray-300 rounded-lg">
@@ -92,7 +92,7 @@
                     <td class="px-2 py-4 text-center">
                         {% with lp=lastest_handling_processes|getvalue:order %}
                             {% if lp %}
-                                <p id="handling-status-{{ order.id }}" class="pb-1 text-xs text-gray-600">{{ lp.state }}</p>
+                                <p id="handling-status-{{ order.id }}" class="pb-1 text-xs text-gray-600">{{ lp.state|title }}</p>
                                 <p id="processing-status-{{ order.id }}" class="text-xs text-gray-400"></p>
                             {% else %}
                                 <p>-</p>

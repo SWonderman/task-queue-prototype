@@ -17,7 +17,8 @@ def handle_orders(order_ids: List[str]) -> None:
         logger.error(msg="No order IDs were passed to handle orders function.")
         return
 
-    orders: QuerySet[Order] = Order.objects.filter(id__in=order_ids)
+    # Order the elements in the same way they are getting displayed on the frontend
+    orders: QuerySet[Order] = Order.objects.filter(id__in=order_ids).order_by("-created_at")
     if len(orders) == 0:
         logger.error(msg="No orders were found for the provided IDs")
         return

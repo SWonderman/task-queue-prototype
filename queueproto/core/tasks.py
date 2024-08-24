@@ -18,7 +18,9 @@ def handle_orders(order_ids: List[str]) -> None:
         return
 
     # Order the elements in the same way they are getting displayed on the frontend
-    orders: QuerySet[Order] = Order.objects.filter(id__in=order_ids).order_by("-created_at")
+    orders: QuerySet[Order] = Order.objects.filter(id__in=order_ids).order_by(
+        "-created_at"
+    )
     if len(orders) == 0:
         logger.error(msg="No orders were found for the provided IDs")
         return
@@ -26,10 +28,7 @@ def handle_orders(order_ids: List[str]) -> None:
     event_queue: OrderProcessingEventQueue = OrderProcessingEventQueue()
     for order in orders:
         event_queue.enque_processing_status_event(
-            data={
-                "order_id": str(order.id),
-                "status": "QUEUED"
-            },
+            data={"order_id": str(order.id), "status": "QUEUED"},
             event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
         )
 
@@ -49,10 +48,7 @@ def handle_order(order_id: str) -> None:
 
     event_queue = OrderProcessingEventQueue()
     event_queue.enque_processing_status_event(
-        data={
-            "order_id": str(order.id),
-            "status": "PROCESSING"
-        },
+        data={"order_id": str(order.id), "status": "PROCESSING"},
         event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
     )
 
@@ -71,10 +67,7 @@ def handle_order(order_id: str) -> None:
     # TODO: handle error/fail path
 
     event_queue.enque_processing_status_event(
-        data={
-            "order_id": str(order.id),
-            "status": "PROCESSED"
-        },
+        data={"order_id": str(order.id), "status": "PROCESSED"},
         event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
     )
 
@@ -88,10 +81,7 @@ def handle_order(order_id: str) -> None:
     )
 
     event_queue.enque_processing_status_event(
-        data={
-            "order_id": str(order.id),
-            "status": "SHIPPED"
-        },
+        data={"order_id": str(order.id), "status": "SHIPPED"},
         event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS,
     )
 

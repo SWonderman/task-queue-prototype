@@ -207,11 +207,16 @@ def add_orders_to_handling_queue(ids: Annotated[order_schema.OrderIds, Body]):
     )
 
 
-@router.get("/orders/{id}/fulfillment/history", response_model=List[order_schema.OrderHandlingProcess])
+@router.get(
+    "/orders/{id}/fulfillment/history",
+    response_model=List[order_schema.OrderHandlingProcess],
+)
 def get_order_fulfillment_history(id: Annotated[str, Path(title="Order ID")]):
     try:
         order = Order.objects.get(id=id)
-        handling_processes: QuerySet[OrderHandlingProcess] = order.handling_processes.all()
+        handling_processes: QuerySet[OrderHandlingProcess] = (
+            order.handling_processes.all()
+        )
     except Order.OrderDoesNotExist:
         raise HTTPException(status_code=404, detail="Order was not found")
 
@@ -224,7 +229,8 @@ def get_order_fulfillment_history(id: Annotated[str, Path(title="Order ID")]):
             state=str(process.state),
             started_at=str(process.started_at),
             finished_at=str(process.finished_at),
-        ) for process in handling_processes
+        )
+        for process in handling_processes
     ]
 
 

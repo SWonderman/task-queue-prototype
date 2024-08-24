@@ -98,7 +98,7 @@ class OrderShipment(BaseModel):
             data={
                 "order_id": str(order.id),
                 "state": "GENERATING SHIPMENT",
-                "status": "SUCCESS"
+                "status": "SUCCESS",
             },
             event_queue=event_queue_key,
         )

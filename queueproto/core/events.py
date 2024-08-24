@@ -47,9 +47,7 @@ class OrderProcessingEventQueue(metaclass=Singleton):
     def enque_processing_status_event(
         self, data: Dict[str, Any], event_queue: EventQueueKey
     ) -> None:
-        self._connection.lpush(
-            event_queue.value, json.dumps(data)
-        )
+        self._connection.lpush(event_queue.value, json.dumps(data))
 
     def pop_processing_status(
         self, event_queue: EventQueueKey

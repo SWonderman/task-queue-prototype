@@ -28,8 +28,7 @@ def handle_orders(order_ids: List[str]) -> None:
     event_queue: OrderProcessingEventQueue = OrderProcessingEventQueue()
     for order in orders:
         event_queue.enque_processing_status_event(
-            data={"order_id": str(order.id), "status": "QUEUED"},
-            event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
+            data={"order_id": str(order.id), "status": "QUEUED", "event": "updatedOrderProcessingStatus"},
         )
 
     for order in orders:
@@ -48,41 +47,38 @@ def handle_order(order_id: str) -> None:
 
     event_queue = OrderProcessingEventQueue()
     event_queue.enque_processing_status_event(
-        data={"order_id": str(order.id), "status": "PROCESSING"},
-        event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
+        data={"order_id": str(order.id), "status": "PROCESSING", "event": "updatedOrderProcessingStatus"},
     )
 
     started_at = now()
 
-    created_shipment = OrderShipment.create_shipment_for_order(
-        order, event_queue, OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
+    OrderShipment.create_shipment_for_order(
+        order, event_queue,
     )
     Order.send_back_tracking_number(
-        order, event_queue, OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
+        order, event_queue,
     )
     Order.mark_order_as_shipped(
-        order, event_queue, OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
+        order, event_queue,
     )
 
     # TODO: handle error/fail path
-
-    event_queue.enque_processing_status_event(
-        data={"order_id": str(order.id), "status": "PROCESSED"},
-        event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
-    )
 
     event_queue.enque_processing_status_event(
         data={
             "order_id": str(order.id),
             "state": "HANDLED",
             "status": "SUCCESS",
+            "event": "updatedOrderHandlingStatus",
         },
-        event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS,
     )
 
     event_queue.enque_processing_status_event(
-        data={"order_id": str(order.id), "status": "SHIPPED"},
-        event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS,
+        data={"order_id": str(order.id), "status": "PROCESSED", "event": "updatedOrderProcessingStatus"},
+    )
+
+    event_queue.enque_processing_status_event(
+        data={"order_id": str(order.id), "status": "SHIPPED", "event": "updatedOrderFulfillmentStatus"},
     )
 
     OrderHandlingProcess.objects.create(

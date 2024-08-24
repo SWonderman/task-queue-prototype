@@ -26,38 +26,14 @@ async def order_event_generator(
                 convert_db_order_to_schema, recent_order
             )
             yield f"event: newOrders\ndata: {schemas_order.model_dump_json()}\n\n"
-        if process_event_queue.has_items(
-            event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT
-        ):
-            processing_status_data: Optional[Dict[str, str]] = (
-                process_event_queue.pop_processing_status(
-                    event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT
-                )
-            )
-            if processing_status_data is None:
+        
+        if process_event_queue.has_items():
+            processing_order_data: Optional[Dict[str, str]] = process_event_queue.pop_processing_status()
+            if processing_order_data is None:
+                # should not happend based on the has_items() check above
                 return
-            yield f"event: updatedOrderProcessingStatus\ndata: {json.dumps(processing_status_data)}\n\n"
-        if process_event_queue.has_items(
-            event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
-        ):
-            processing_status_data: Optional[Dict[str, str]] = (
-                process_event_queue.pop_processing_status(
-                    event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
-                )
-            )
-            if processing_status_data is None:
-                return
-            yield f"event: updatedOrderHandlingStatus\ndata: {json.dumps(processing_status_data)}\n\n"
-        if process_event_queue.has_items(
-            event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS
-        ):
-            processing_status_data: Optional[Dict[str, str]] = (
-                process_event_queue.pop_processing_status(
-                    event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS
-                )
-            )
-            if processing_status_data is None:
-                return
-            yield f"event: updatedOrderFulfillmentStatus\ndata: {json.dumps(processing_status_data)}\n\n"
+
+            event = processing_order_data.pop("event", "")
+            yield f"event: {event}\ndata: {json.dumps(processing_order_data)}\n\n"
 
         await asyncio.sleep(0.5)

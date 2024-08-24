@@ -1,5 +1,4 @@
 import json
-from enum import Enum
 from typing import Deque, Optional, Iterable, Dict, Any
 from collections import deque
 
@@ -35,29 +34,24 @@ class OrderEventsQueue(metaclass=Singleton):
 # A wrapper class around a 'raw' redis connection that utlizes
 # redis list as a queue
 class OrderProcessingEventQueue(metaclass=Singleton):
-    class EventQueueKey(str, Enum):
-        PROCESSING_STATUS_EVENT = "order_processing_status_event_queue"
-        HANDLING_PROCESS = "order_handling_process_event_queue"
-        FULFILLMENT_STATUS = "order_fulfillment_status_event_queue"
-
     def __init__(self):
         self._event_queue_key = "order_processing_status_event_queue"
         self._connection = get_redis_connection("default")
 
     def enque_processing_status_event(
-        self, data: Dict[str, Any], event_queue: EventQueueKey
+        self, data: Dict[str, Any]
     ) -> None:
-        self._connection.lpush(event_queue.value, json.dumps(data))
+        self._connection.lpush(self._event_queue_key, json.dumps(data))
 
     def pop_processing_status(
-        self, event_queue: EventQueueKey
+        self
     ) -> Optional[Dict[str, str]]:
-        event = self._connection.rpop(event_queue.value)
+        event = self._connection.rpop(self._event_queue_key)
 
         if not event:
             return None
 
         return json.loads(event)
 
-    def has_items(self, event_queue: EventQueueKey) -> bool:
-        return len(self._connection.lrange(event_queue.value, 0, -1)) > 0
+    def has_items(self) -> bool:
+        return len(self._connection.lrange(self._event_queue_key, 0, -1)) > 0

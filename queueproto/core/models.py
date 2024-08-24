@@ -1,6 +1,5 @@
 import uuid
 import time
-import random
 from typing import List, Optional, Dict, Iterable
 
 from django.db import models, transaction
@@ -70,7 +69,7 @@ class OrderShipment(BaseModel):
 
     @classmethod
     def create_shipment_for_order(
-        cls, order: "Order", event_queue, event_queue_key
+        cls, order: "Order", event_queue
     ) -> "OrderShipment":
         started_at = now()
 
@@ -99,8 +98,8 @@ class OrderShipment(BaseModel):
                 "order_id": str(order.id),
                 "state": "GENERATING SHIPMENT",
                 "status": "SUCCESS",
+                "event": "updatedOrderHandlingStatus",
             },
-            event_queue=event_queue_key,
         )
 
         # TODO: it might be a good idea to return just created handling process
@@ -190,7 +189,7 @@ class Order(BaseModel):
                         ]
                     )
 
-                    customer = customers.append(
+                    customers.append(
                         Customer(
                             first_name=fake_order.customer.first_name,
                             last_name=fake_order.customer.last_name,
@@ -230,7 +229,7 @@ class Order(BaseModel):
         )
 
     @classmethod
-    def send_back_tracking_number(cls, order: "Order", event_queue, event_queue_key):
+    def send_back_tracking_number(cls, order: "Order", event_queue):
         started_at = now()
 
         # NOTE: just simulate a work of sending an API request and waiting for response
@@ -252,12 +251,12 @@ class Order(BaseModel):
                 "order_id": str(order.id),
                 "state": "SENDING TRACKING",
                 "status": "SUCCESS",
+                "event": "updatedOrderHandlingStatus",
             },
-            event_queue=event_queue_key,
         )
 
     @classmethod
-    def mark_order_as_shipped(cls, order: "Order", event_queue, event_queue_key):
+    def mark_order_as_shipped(cls, order: "Order", event_queue):
         started_at = now()
 
         # NOTE: just simulate a work of sending an API request and waiting for response
@@ -279,8 +278,8 @@ class Order(BaseModel):
                 "order_id": str(order.id),
                 "state": "MARKING AS SHIPPED",
                 "status": "SUCCESS",
+                "event": "updatedOrderHandlingStatus",
             },
-            event_queue=event_queue_key,
         )
 
     @classmethod

@@ -1,10 +1,8 @@
 import json
 from enum import Enum
-from typing import Deque, Optional, Iterable, List, Dict, Any
+from typing import Deque, Optional, Iterable, Dict, Any
 from collections import deque
 
-from django.db.models import QuerySet
-from django.core.cache import cache
 from django_redis import get_redis_connection
 
 from core.models import Order
@@ -34,6 +32,8 @@ class OrderEventsQueue(metaclass=Singleton):
         return len(self.recently_added_orders) > 0
 
 
+# A wrapper class around a 'raw' redis connection that utlizes
+# redis list as a queue
 class OrderProcessingEventQueue(metaclass=Singleton):
     class EventQueueKey(str, Enum):
         PROCESSING_STATUS_EVENT = "order_processing_status_event_queue"

@@ -6,7 +6,6 @@ from typing import List, Annotated, AsyncGenerator, Set, Optional, Dict
 from fastapi import APIRouter, HTTPException, Path, Body, Request, Query
 from fastapi.responses import StreamingResponse
 from django.db.models import QuerySet
-from django.forms.models import model_to_dict
 
 from core.models import Order, OrderHandlingProcess
 from core.events import OrderEventsQueue, OrderProcessingEventQueue
@@ -56,85 +55,56 @@ def get_orders(
 
 
 async def order_event_generator(
-    request: Request, event_queue: OrderEventsQueue
+    request: Request, order_event_queue: OrderEventsQueue, process_event_queue: OrderProcessingEventQueue,
 ) -> AsyncGenerator[str, None]:
     while True:
         if await request.is_disconnected():
             break
 
-        if event_queue.has_orders():
-            recent_order = event_queue.pop_order()
+        if order_event_queue.has_orders():
+            recent_order = order_event_queue.pop_order()
             if (
                 recent_order is None
-            ):  # NOTE: this should not happen after the initial has_orders check
+            ):
                 return
             schemas_order = await asyncio.to_thread(
                 order_api_utils.convert_db_order_to_schema, recent_order
             )
             yield f"event: newOrders\ndata: {schemas_order.model_dump_json()}\n\n"
-        await asyncio.sleep(0.5)
-
-
-async def order_processing_status_event_generator(
-    request: Request, event_queue: OrderProcessingEventQueue
-) -> AsyncGenerator[str, None]:
-    while True:
-        if await request.is_disconnected():
-            break
-
-        if event_queue.has_items(
+        if process_event_queue.has_items(
             event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT
         ):
             processing_status_data: Optional[Dict[str, str]] = (
-                event_queue.pop_processing_status(
+                process_event_queue.pop_processing_status(
                     event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT
                 )
             )
             if processing_status_data is None:
                 return
             yield f"event: updatedOrderProcessingStatus\ndata: {json.dumps(processing_status_data)}\n\n"
-        await asyncio.sleep(0.5)
-
-
-async def order_handling_status_event_generator(
-    request: Request, event_queue: OrderProcessingEventQueue
-) -> AsyncGenerator[str, None]:
-    while True:
-        if await request.is_disconnected():
-            break
-
-        if event_queue.has_items(
+        if process_event_queue.has_items(
             event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
         ):
             processing_status_data: Optional[Dict[str, str]] = (
-                event_queue.pop_processing_status(
+                process_event_queue.pop_processing_status(
                     event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS
                 )
             )
             if processing_status_data is None:
                 return
             yield f"event: updatedOrderHandlingStatus\ndata: {json.dumps(processing_status_data)}\n\n"
-        await asyncio.sleep(0.5)
-
-
-async def order_fulfillment_status_event_generator(
-    request: Request, event_queue: OrderProcessingEventQueue
-) -> AsyncGenerator[str, None]:
-    while True:
-        if await request.is_disconnected():
-            break
-
-        if event_queue.has_items(
+        if process_event_queue.has_items(
             event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS
         ):
             processing_status_data: Optional[Dict[str, str]] = (
-                event_queue.pop_processing_status(
+                process_event_queue.pop_processing_status(
                     event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS
                 )
             )
             if processing_status_data is None:
                 return
             yield f"event: updatedOrderFulfillmentStatus\ndata: {json.dumps(processing_status_data)}\n\n"
+
         await asyncio.sleep(0.5)
 
 
@@ -142,39 +112,10 @@ async def order_fulfillment_status_event_generator(
 async def stream_orders(request: Request):
     active_connections.add(request)
     return StreamingResponse(
-        order_event_generator(request=request, event_queue=OrderEventsQueue()),
-        media_type="text/event-stream",
-    )
-
-
-@router.get("/orders/processing/status/stream")
-async def stream_orders_processing_status(request: Request):
-    active_connections.add(request)
-    return StreamingResponse(
-        order_processing_status_event_generator(
-            request=request, event_queue=OrderProcessingEventQueue()
-        ),
-        media_type="text/event-stream",
-    )
-
-
-@router.get("/orders/handling/status/stream")
-async def stream_orders_handling_status(request: Request):
-    active_connections.add(request)
-    return StreamingResponse(
-        order_handling_status_event_generator(
-            request=request, event_queue=OrderProcessingEventQueue()
-        ),
-        media_type="text/event-stream",
-    )
-
-
-@router.get("/orders/fulfillment/status/stream")
-async def stream_orders_fulfilment_status(request: Request):
-    active_connections.add(request)
-    return StreamingResponse(
-        order_fulfillment_status_event_generator(
-            request=request, event_queue=OrderProcessingEventQueue()
+        order_event_generator(
+            request=request,
+            order_event_queue=OrderEventsQueue(),
+            process_event_queue=OrderProcessingEventQueue(),
         ),
         media_type="text/event-stream",
     )

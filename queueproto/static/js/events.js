@@ -7,15 +7,6 @@ import {
 import { setClickEventToDisplayHandlingStatusModal } from "./dom.js";
 
 const order_event_source = new EventSource(`${API_URL}/core/orders/stream`);
-const order_processing_status_event_source = new EventSource(
-  `${API_URL}/core/orders/processing/status/stream`,
-);
-const order_handling_status_event_source = new EventSource(
-  `${API_URL}/core/orders/handling/status/stream`,
-);
-const order_fulfillment_status_event_source = new EventSource(
-  `${API_URL}/core/orders/fulfillment/status/stream`,
-);
 
 order_event_source.onopen = () => {
   console.log("Connecting to the SSE.");
@@ -29,11 +20,7 @@ order_event_source.addEventListener("newOrders", async function (event) {
   }
 });
 
-order_processing_status_event_source.onopen = () => {
-  console.log("Connecting to the monitoring orders processing status SSE.");
-};
-
-order_processing_status_event_source.addEventListener(
+order_event_source.addEventListener(
   "updatedOrderProcessingStatus",
   function (event) {
     try {
@@ -44,11 +31,7 @@ order_processing_status_event_source.addEventListener(
   },
 );
 
-order_handling_status_event_source.onopen = () => {
-  console.log("Connecting to the monitoring orders handling status SSE.");
-};
-
-order_handling_status_event_source.addEventListener(
+order_event_source.addEventListener(
   "updatedOrderHandlingStatus",
   function (event) {
     try {
@@ -59,11 +42,7 @@ order_handling_status_event_source.addEventListener(
   },
 );
 
-order_fulfillment_status_event_source.onopen = () => {
-  console.log("Connecting to monitoring orders fulfillment status SSE.");
-};
-
-order_fulfillment_status_event_source.addEventListener(
+order_event_source.addEventListener(
   "updatedOrderFulfillmentStatus",
   function (event) {
     try {

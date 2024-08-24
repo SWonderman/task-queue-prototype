@@ -1,6 +1,6 @@
 import uuid
-import time
-from typing import List, Optional, Dict, Iterable, Any
+import datetime
+from typing import List, Optional, Dict, Iterable
 
 from django.db import models, transaction
 from django.db.models import QuerySet
@@ -12,7 +12,6 @@ from core.definitions import (
     Order as OrderDefinition,
     Error,
     Result,
-    OrderShipment as OrderShipmentDefinition,
     ApiResponse,
 )
 from core.api import simulate_request
@@ -78,20 +77,14 @@ class OrderShipment(BaseModel):
         api_response: ApiResponse[OrderShipment] = simulate_request(
             data_callback=generate_order_shipment,
             allow_failure=True,
-            failure_percentage=75,
+            failure_percentage=5,
         )
 
-        order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
-        process_status = "SUCCESS"
-        process_message = ""
+        error = None
         shipment = None
-
         if api_response.status_code != 200 and isinstance(api_response.response, Error):
-            error: Error = api_response.response
-            order_handling_process_status = OrderHandlingProcess.Status.FAILED
-            process_status = "FAILED"
-            process_message = error.message
-        else:
+            error = api_response.response
+        else: 
             shipment_data: OrderShipment = api_response.response
             shipment = cls.objects.create(
                 shipment_id=shipment_data.shipment_id,
@@ -100,22 +93,13 @@ class OrderShipment(BaseModel):
                 order=order,
             )
 
-        OrderHandlingProcess.objects.create(
-            status=order_handling_process_status,
-            state=OrderHandlingProcess.State.GENERATING_SHIPMENT,
-            message=process_message,
-            started_at=started_at,
-            finished_at=now(),
+        OrderHandlingProcess.update_processing(
             order=order,
-        )
-
-        event_queue.enque_processing_status_event(
-            data={
-                "order_id": str(order.id),
-                "state": "GENERATING SHIPMENT",
-                "status": process_status,
-                "event": "updatedOrderHandlingStatus",
-            },
+            state=OrderHandlingProcess.State.GENERATING_SHIPMENT,
+            started_at=started_at,
+            event_queue=event_queue,
+            event_name="updatedOrderHandlingStatus",
+            error=error,
         )
 
         return shipment
@@ -146,6 +130,43 @@ class OrderHandlingProcess(BaseModel):
         null=True,
         blank=True,
     )
+
+    @classmethod
+    def update_processing(
+        cls,
+        order: "Order", 
+        state: "OrderHandlingProcess.State", 
+        started_at: datetime.datetime,
+        event_queue,
+        event_name: str,
+        error: Optional[Error] = None,
+    ):
+        order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
+        process_status = "SUCCESS"
+        process_message = None
+
+        if error:
+            order_handling_process_status = OrderHandlingProcess.Status.FAILED
+            process_status = "FAILED"
+            process_message = error.message
+
+        cls.objects.create(
+            status=order_handling_process_status,
+            state=state,
+            message=process_message,
+            started_at=started_at,
+            finished_at=now(),
+            order=order,
+        )
+
+        event_queue.enque_processing_status_event(
+            data={
+                "order_id": str(order.id),
+                "state": state.value,
+                "status": process_status,
+                "event": event_name,
+            },
+        )
 
 
 class Order(BaseModel):
@@ -249,44 +270,22 @@ class Order(BaseModel):
             data_callback=generate_order_shipment, allow_failure=True
         )
 
-        order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
-        process_status = "SUCCESS"
-        process_message = ""
-        is_successful = True
-
+        error = None
         if not order.shipment:
-            order_handling_process_status = OrderHandlingProcess.Status.FAILED
-            process_status = "FAILED"
-            process_message = f"Order with ID '{order.id}' does not have shipment"
-            is_successful = False
-        elif api_response.status_code != 200 and isinstance(
-            api_response.response, Error
-        ):
-            error: Error = api_response.response
-            order_handling_process_status = OrderHandlingProcess.Status.FAILED
-            process_status = "FAILED"
-            process_message = (error.message,)
-            is_successful = False
+            error = Error(message=f"Order with ID '{order.id}' does not have shipment.")
+        elif api_response.status_code != 200 and isinstance(api_response.response, Error):
+            error = api_response.response
 
-        OrderHandlingProcess.objects.create(
-            status=order_handling_process_status,
-            state=OrderHandlingProcess.State.SENDING_TRACKING,
-            message=process_message,
-            started_at=started_at,
-            finished_at=now(),
+        OrderHandlingProcess.update_processing(
             order=order,
+            state=OrderHandlingProcess.State.SENDING_TRACKING,
+            started_at=started_at,
+            event_queue=event_queue,
+            event_name="updatedOrderHandlingStatus",
+            error=error,
         )
 
-        event_queue.enque_processing_status_event(
-            data={
-                "order_id": str(order.id),
-                "state": "SENDING TRACKING",
-                "status": process_status,
-                "event": "updatedOrderHandlingStatus",
-            },
-        )
-
-        return is_successful
+        return error == None
 
     @classmethod
     def mark_order_as_shipped(cls, order: "Order", event_queue) -> bool:
@@ -296,37 +295,20 @@ class Order(BaseModel):
             data_callback=None, allow_failure=True
         )
 
-        order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
-        process_status = "SUCCESS"
-        process_message = ""
-        is_successful = True
-
+        error = None
         if api_response.status_code != 200 and isinstance(api_response.response, Error):
-            error: Error = api_response.response
-            order_handling_process_status = OrderHandlingProcess.Status.FAILED
-            process_status = "FAILED"
-            process_message = (error.message,)
-            is_successful = False
+            error = api_response.response
 
-        OrderHandlingProcess.objects.create(
-            status=order_handling_process_status,
-            state=OrderHandlingProcess.State.MARKING_AS_SHIPPED,
-            message=process_message,
-            started_at=started_at,
-            finished_at=now(),
+        OrderHandlingProcess.update_processing(
             order=order,
+            state=OrderHandlingProcess.State.MARKING_AS_SHIPPED,
+            started_at=started_at,
+            event_queue=event_queue,
+            event_name="updatedOrderHandlingStatus",
+            error=error,
         )
 
-        event_queue.enque_processing_status_event(
-            data={
-                "order_id": str(order.id),
-                "state": "MARKING AS SHIPPED",
-                "status": process_status,
-                "event": "updatedOrderHandlingStatus",
-            },
-        )
-
-        return is_successful
+        return error == None 
 
     @classmethod
     def get_latest_handling_process_for_each_order(

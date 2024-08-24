@@ -1,6 +1,6 @@
 import uuid
 import time
-from typing import List, Optional, Dict, Iterable
+from typing import List, Optional, Dict, Iterable, Any
 
 from django.db import models, transaction
 from django.db.models import QuerySet
@@ -13,7 +13,9 @@ from core.definitions import (
     Error,
     Result,
     OrderShipment as OrderShipmentDefinition,
+    ApiResponse,
 )
+from core.api import simulate_request
 
 
 class BaseModel(models.Model):
@@ -43,8 +45,8 @@ class Customer(BaseModel):
 
 
 class OrderItem(BaseModel):
-    product_sku = models.TextField(max_length=25)
-    product_title = models.TextField(max_length=125)
+    product_sku = models.CharField(max_length=25)
+    product_title = models.CharField(max_length=125)
     product_media_url = models.URLField(blank=True, null=True)
     price = models.DecimalField(decimal_places=4, max_digits=19)
     quantity = models.PositiveSmallIntegerField()
@@ -68,24 +70,34 @@ class OrderShipment(BaseModel):
     )
 
     @classmethod
-    def create_shipment_for_order(cls, order: "Order", event_queue) -> "OrderShipment":
+    def create_shipment_for_order(cls, order: "Order", event_queue) -> Optional["OrderShipment"]:
         started_at = now()
 
-        shipment_data: OrderShipmentDefinition = generate_order_shipment()
-        shipment = cls.objects.create(
-            shipment_id=shipment_data.shipment_id,
-            carrier_name=shipment_data.carrier_name,
-            carrier_code=shipment_data.carrier_code,
-            order=order,
-        )
+        api_response: ApiResponse[OrderShipment] = simulate_request(data_callback=generate_order_shipment, allow_failure=True, failure_percentage=75)
 
-        # NOTE: just simulate a work of sending an API request and waiting for response
-        # time.sleep(random.uniform(0.1, 0.5))
-        time.sleep(0.5)
+        order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
+        process_status = "SUCCESS"
+        process_message = ""
+        shipment = None
+
+        if api_response.status_code != 200 and isinstance(api_response.response, Error):
+            error: Error = api_response.response
+            order_handling_process_status = OrderHandlingProcess.Status.FAILED
+            process_status = "FAILED"
+            process_message = error.message
+        else:
+            shipment_data: OrderShipment = api_response.response
+            shipment = cls.objects.create(
+                shipment_id=shipment_data.shipment_id,
+                carrier_name=shipment_data.carrier_name,
+                carrier_code=shipment_data.carrier_code,
+                order=order,
+            )
 
         OrderHandlingProcess.objects.create(
-            status=OrderHandlingProcess.Status.SUCCEEDED,
+            status=order_handling_process_status,
             state=OrderHandlingProcess.State.GENERATING_SHIPMENT,
+            message=process_message,
             started_at=started_at,
             finished_at=now(),
             order=order,
@@ -95,14 +107,10 @@ class OrderShipment(BaseModel):
             data={
                 "order_id": str(order.id),
                 "state": "GENERATING SHIPMENT",
-                "status": "SUCCESS",
+                "status": process_status,
                 "event": "updatedOrderHandlingStatus",
             },
         )
-
-        # TODO: it might be a good idea to return just created handling process
-        # and pass it to the next function/task that it meant to run only
-        # if this process was successful.
 
         return shipment
 
@@ -121,6 +129,7 @@ class OrderHandlingProcess(BaseModel):
 
     status = models.CharField(max_length=25, choices=Status.choices)
     state = models.CharField(max_length=25, choices=State.choices)
+    message = models.CharField(max_length=255, null=True, blank=True)
     started_at = models.DateTimeField()
     finished_at = models.DateTimeField()
 
@@ -227,18 +236,32 @@ class Order(BaseModel):
         )
 
     @classmethod
-    def send_back_tracking_number(cls, order: "Order", event_queue):
+    def send_back_tracking_number(cls, order: "Order", event_queue) -> bool:
         started_at = now()
 
-        # NOTE: just simulate a work of sending an API request and waiting for response
-        # time.sleep(random.uniform(0.1, 0.5))
-        time.sleep(0.5)
+        api_response: ApiResponse[None] = simulate_request(data_callback=generate_order_shipment, allow_failure=True)
 
-        # TODO: tracking cannot be sent if the order does not have shipment
+        order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
+        process_status = "SUCCESS"
+        process_message = ""
+        is_successful = True
+
+        if not order.shipment:
+            order_handling_process_status = OrderHandlingProcess.Status.FAILED
+            process_status = "FAILED"
+            process_message = f"Order with ID '{order.id}' does not have shipment"
+            is_successful = False
+        elif api_response.status_code != 200 and isinstance(api_response.response, Error):
+            error: Error = api_response.response
+            order_handling_process_status = OrderHandlingProcess.Status.FAILED
+            process_status = "FAILED"
+            process_message = error.message,
+            is_successful = False
 
         OrderHandlingProcess.objects.create(
-            status=OrderHandlingProcess.Status.SUCCEEDED,
+            status=order_handling_process_status,
             state=OrderHandlingProcess.State.SENDING_TRACKING,
+            message=process_message,
             started_at=started_at,
             finished_at=now(),
             order=order,
@@ -248,24 +271,35 @@ class Order(BaseModel):
             data={
                 "order_id": str(order.id),
                 "state": "SENDING TRACKING",
-                "status": "SUCCESS",
+                "status": process_status,
                 "event": "updatedOrderHandlingStatus",
             },
         )
 
+        return is_successful
+
     @classmethod
-    def mark_order_as_shipped(cls, order: "Order", event_queue):
+    def mark_order_as_shipped(cls, order: "Order", event_queue) -> bool:
         started_at = now()
 
-        # NOTE: just simulate a work of sending an API request and waiting for response
-        # time.sleep(random.uniform(0.1, 0.5))
-        time.sleep(0.5)
+        api_response: ApiResponse[None] = simulate_request(data_callback=None, allow_failure=True)
 
-        # TODO: order cannot be marked as shipped if tracking information were not sent to back
+        order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
+        process_status = "SUCCESS"
+        process_message = ""
+        is_successful = True
+
+        if api_response.status_code != 200 and isinstance(api_response.response, Error):
+            error: Error = api_response.response
+            order_handling_process_status = OrderHandlingProcess.Status.FAILED
+            process_status = "FAILED"
+            process_message = error.message,
+            is_successful = False
 
         OrderHandlingProcess.objects.create(
-            status=OrderHandlingProcess.Status.SUCCEEDED,
+            status=order_handling_process_status,
             state=OrderHandlingProcess.State.MARKING_AS_SHIPPED,
+            message=process_message,
             started_at=started_at,
             finished_at=now(),
             order=order,
@@ -275,10 +309,12 @@ class Order(BaseModel):
             data={
                 "order_id": str(order.id),
                 "state": "MARKING AS SHIPPED",
-                "status": "SUCCESS",
+                "status": process_status,
                 "event": "updatedOrderHandlingStatus",
             },
         )
+
+        return is_successful
 
     @classmethod
     def get_latest_handling_process_for_each_order(

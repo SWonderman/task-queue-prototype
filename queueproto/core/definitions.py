@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, TypeVar, Generic
+from typing import Optional, List, TypeVar, Generic, Union
 from dataclasses import dataclass
 from enum import Enum
 
@@ -15,6 +15,12 @@ class Error:
 class Result(Generic[T]):
     errors: List[Error]
     result: T
+
+
+@dataclass
+class ApiResponse(Generic[T]):
+    status_code: int
+    response: Union[T, Error]
 
 
 class OrderState(str, Enum):

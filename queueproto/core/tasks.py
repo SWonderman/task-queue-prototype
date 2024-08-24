@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from django.utils.timezone import now
 from django.db.models import QuerySet
@@ -60,20 +60,47 @@ def handle_order(order_id: str) -> None:
 
     started_at = now()
 
-    OrderShipment.create_shipment_for_order(
+    shipment: Optional[OrderShipment] = OrderShipment.create_shipment_for_order(
         order,
         event_queue,
     )
-    Order.send_back_tracking_number(
-        order,
-        event_queue,
-    )
-    Order.mark_order_as_shipped(
-        order,
-        event_queue,
-    )
+    if shipment is None:
+        event_queue.enque_processing_status_event(
+            data={
+                "order_id": str(order.id),
+                "status": "PROCESSED",
+                "event": "updatedOrderProcessingStatus",
+            },
+        )
+        return
 
-    # TODO: handle error/fail path
+    was_sent_back = Order.send_back_tracking_number(
+        order,
+        event_queue,
+    )
+    if not was_sent_back:
+        event_queue.enque_processing_status_event(
+            data={
+                "order_id": str(order.id),
+                "status": "PROCESSED",
+                "event": "updatedOrderProcessingStatus",
+            },
+        )
+        return
+    
+    was_marked_as_shipped = Order.mark_order_as_shipped(
+        order,
+        event_queue,
+    )
+    if not was_marked_as_shipped:
+        event_queue.enque_processing_status_event(
+            data={
+                "order_id": str(order.id),
+                "status": "PROCESSED",
+                "event": "updatedOrderProcessingStatus",
+            },
+        )
+        return
 
     event_queue.enque_processing_status_event(
         data={

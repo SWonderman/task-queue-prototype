@@ -68,9 +68,7 @@ class OrderShipment(BaseModel):
     )
 
     @classmethod
-    def create_shipment_for_order(
-        cls, order: "Order", event_queue
-    ) -> "OrderShipment":
+    def create_shipment_for_order(cls, order: "Order", event_queue) -> "OrderShipment":
         started_at = now()
 
         shipment_data: OrderShipmentDefinition = generate_order_shipment()

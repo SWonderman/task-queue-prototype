@@ -38,14 +38,10 @@ class OrderProcessingEventQueue(metaclass=Singleton):
         self._event_queue_key = "order_processing_status_event_queue"
         self._connection = get_redis_connection("default")
 
-    def enque_processing_status_event(
-        self, data: Dict[str, Any]
-    ) -> None:
+    def enque_processing_status_event(self, data: Dict[str, Any]) -> None:
         self._connection.lpush(self._event_queue_key, json.dumps(data))
 
-    def pop_processing_status(
-        self
-    ) -> Optional[Dict[str, str]]:
+    def pop_processing_status(self) -> Optional[Dict[str, str]]:
         event = self._connection.rpop(self._event_queue_key)
 
         if not event:

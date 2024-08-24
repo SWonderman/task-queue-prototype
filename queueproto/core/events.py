@@ -1,6 +1,6 @@
 import json
 from enum import Enum
-from typing import Deque, Optional, Iterable, List, Dict
+from typing import Deque, Optional, Iterable, List, Dict, Any
 from collections import deque
 
 from django.db.models import QuerySet
@@ -45,10 +45,10 @@ class OrderProcessingEventQueue(metaclass=Singleton):
         self._connection = get_redis_connection("default")
 
     def enque_processing_status_event(
-        self, order_id: str, status: str, event_queue: EventQueueKey
+        self, data: Dict[str, Any], event_queue: EventQueueKey
     ) -> None:
         self._connection.lpush(
-            event_queue.value, json.dumps({"order_id": order_id, "status": status})
+            event_queue.value, json.dumps(data)
         )
 
     def pop_processing_status(

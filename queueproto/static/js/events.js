@@ -131,7 +131,6 @@ async function updateOrdersTable(orderData) {
   const stateInnerDiv = document.createElement("div");
   stateInnerDiv.className =
     "w-[85px] flex flex-row items-center justify-center gap-2 p-1 bg-yellow-200 border border-yellow-300 rounded-lg";
-
   const stateInnerDivSpan = document.createElement("span");
   stateInnerDivSpan.className =
     "w-[8px] h-[8px] border-2 border-yellow-600 rounded-full";
@@ -155,8 +154,22 @@ async function updateOrdersTable(orderData) {
     orderData["latest_handling_process"] != null
       ? toTitleCase(orderData["latest_handling_process"]["state"])
       : "-";
+
+  const latestHandlingProcessStatus =
+    orderData["latest_handling_process"] != null
+      ? orderData["latest_handling_process"]["status"]
+      : null;
+  let handlingProcessStatusIcon =
+    "<img src='static/icons/approve-tick.svg' alt='Success' />";
+  if (latestHandlingProcessStatus == "FAILED") {
+    handlingProcessStatusIcon =
+      "<img src='static/icons/reject-x.svg' alt='Failure' />";
+  }
   tdCol8.innerHTML = `
-    <p id="handling-status-${orderData["id"]}" class="pb-1 text-xs text-gray-600">${latestHandlingProcessState}</p>
+    <div id="handling-status-${orderData["id"]}" class="pb-1 flex flex-row items-center justify-center gap-[2px]">
+      ${handlingProcessStatusIcon}
+      <p class="text-xs text-gray-600">${latestHandlingProcessState}</p>
+    </div>
     <p id="processing-status-${orderData["id"]}" class="text-xs text-gray-400"></p>
   `;
 
@@ -209,17 +222,23 @@ function updateOrdersProcessingStatus(orderProcessingStatusData) {
 }
 
 function updateOrdersHandlingStatus(orderHandlingStatusData) {
-  const handlingStatusParagraph = document.getElementById(
+  const handlingStatusDiv = document.getElementById(
     "handling-status-" + orderHandlingStatusData["order_id"],
   );
-  if (!handlingStatusParagraph) {
+  if (!handlingStatusDiv) {
     console.error("Handling status paragraph was not found");
     return;
   }
 
-  handlingStatusParagraph.innerHTML = toTitleCase(
-    orderHandlingStatusData["status"],
-  );
+  let statusIcon = "<img src='static/icons/approve-tick.svg' alt='Success' />";
+  if (orderHandlingStatusData["status"] == "FAILED") {
+    statusIcon = "<img src='static/icons/reject-x.svg' alt='Failure' />";
+  }
+
+  handlingStatusDiv.innerHTML = `
+    ${statusIcon}
+    <p class="text-xs text-gray-600">${toTitleCase(orderHandlingStatusData["state"])}</p>
+    `;
 }
 
 function updateOrdersFulfillmentStatus(orderFulfillmentStatusData) {

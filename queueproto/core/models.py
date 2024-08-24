@@ -95,8 +95,11 @@ class OrderShipment(BaseModel):
         )
 
         event_queue.enque_processing_status_event(
-            order_id=str(order.id),
-            status="GENERATING SHIPMENT",
+            data={
+                "order_id": str(order.id),
+                "state": "GENERATING SHIPMENT",
+                "status": "SUCCESS"
+            },
             event_queue=event_queue_key,
         )
 
@@ -245,8 +248,11 @@ class Order(BaseModel):
         )
 
         event_queue.enque_processing_status_event(
-            order_id=str(order.id),
-            status="SENDING TRACKING",
+            data={
+                "order_id": str(order.id),
+                "state": "SENDING TRACKING",
+                "status": "SUCCESS",
+            },
             event_queue=event_queue_key,
         )
 
@@ -269,8 +275,11 @@ class Order(BaseModel):
         )
 
         event_queue.enque_processing_status_event(
-            order_id=str(order.id),
-            status="MARKING AS SHIPPED",
+            data={
+                "order_id": str(order.id),
+                "state": "MARKING AS SHIPPED",
+                "status": "SUCCESS",
+            },
             event_queue=event_queue_key,
         )
 

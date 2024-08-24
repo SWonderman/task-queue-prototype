@@ -26,8 +26,10 @@ def handle_orders(order_ids: List[str]) -> None:
     event_queue: OrderProcessingEventQueue = OrderProcessingEventQueue()
     for order in orders:
         event_queue.enque_processing_status_event(
-            order_id=str(order.id),
-            status="QUEUED",
+            data={
+                "order_id": str(order.id),
+                "status": "QUEUED"
+            },
             event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
         )
 
@@ -47,8 +49,10 @@ def handle_order(order_id: str) -> None:
 
     event_queue = OrderProcessingEventQueue()
     event_queue.enque_processing_status_event(
-        order_id=str(order.id),
-        status="PROCESSING",
+        data={
+            "order_id": str(order.id),
+            "status": "PROCESSING"
+        },
         event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
     )
 
@@ -67,20 +71,27 @@ def handle_order(order_id: str) -> None:
     # TODO: handle error/fail path
 
     event_queue.enque_processing_status_event(
-        order_id=str(order.id),
-        status="PROCESSED",
+        data={
+            "order_id": str(order.id),
+            "status": "PROCESSED"
+        },
         event_queue=OrderProcessingEventQueue.EventQueueKey.PROCESSING_STATUS_EVENT,
     )
 
     event_queue.enque_processing_status_event(
-        order_id=str(order.id),
-        status="HANDLED",
+        data={
+            "order_id": str(order.id),
+            "state": "HANDLED",
+            "status": "SUCCESS",
+        },
         event_queue=OrderProcessingEventQueue.EventQueueKey.HANDLING_PROCESS,
     )
 
     event_queue.enque_processing_status_event(
-        order_id=str(order.id),
-        status="SHIPPED",
+        data={
+            "order_id": str(order.id),
+            "status": "SHIPPED"
+        },
         event_queue=OrderProcessingEventQueue.EventQueueKey.FULFILLMENT_STATUS,
     )
 

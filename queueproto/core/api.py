@@ -7,7 +7,10 @@ from core.definitions import ApiResponse, Error
 
 # Simulate work of sending an API request and waiting for response
 def simulate_request(
-    data_callback: Optional[Callable], to_wait: float = 0.5, allow_failure: bool = False, failure_percentage: int = 5
+    data_callback: Optional[Callable],
+    to_wait: float = 0.5,
+    allow_failure: bool = False,
+    failure_percentage: int = 5,
 ) -> ApiResponse:
     time.sleep(to_wait)
 
@@ -25,6 +28,5 @@ def simulate_request(
             status_code=400,
             response=Error(message="Invalid data provided"),
         )
-    
-    return success_response
 
+    return success_response

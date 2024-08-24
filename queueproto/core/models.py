@@ -70,10 +70,16 @@ class OrderShipment(BaseModel):
     )
 
     @classmethod
-    def create_shipment_for_order(cls, order: "Order", event_queue) -> Optional["OrderShipment"]:
+    def create_shipment_for_order(
+        cls, order: "Order", event_queue
+    ) -> Optional["OrderShipment"]:
         started_at = now()
 
-        api_response: ApiResponse[OrderShipment] = simulate_request(data_callback=generate_order_shipment, allow_failure=True, failure_percentage=75)
+        api_response: ApiResponse[OrderShipment] = simulate_request(
+            data_callback=generate_order_shipment,
+            allow_failure=True,
+            failure_percentage=75,
+        )
 
         order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
         process_status = "SUCCESS"
@@ -239,7 +245,9 @@ class Order(BaseModel):
     def send_back_tracking_number(cls, order: "Order", event_queue) -> bool:
         started_at = now()
 
-        api_response: ApiResponse[None] = simulate_request(data_callback=generate_order_shipment, allow_failure=True)
+        api_response: ApiResponse[None] = simulate_request(
+            data_callback=generate_order_shipment, allow_failure=True
+        )
 
         order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
         process_status = "SUCCESS"
@@ -251,11 +259,13 @@ class Order(BaseModel):
             process_status = "FAILED"
             process_message = f"Order with ID '{order.id}' does not have shipment"
             is_successful = False
-        elif api_response.status_code != 200 and isinstance(api_response.response, Error):
+        elif api_response.status_code != 200 and isinstance(
+            api_response.response, Error
+        ):
             error: Error = api_response.response
             order_handling_process_status = OrderHandlingProcess.Status.FAILED
             process_status = "FAILED"
-            process_message = error.message,
+            process_message = (error.message,)
             is_successful = False
 
         OrderHandlingProcess.objects.create(
@@ -282,7 +292,9 @@ class Order(BaseModel):
     def mark_order_as_shipped(cls, order: "Order", event_queue) -> bool:
         started_at = now()
 
-        api_response: ApiResponse[None] = simulate_request(data_callback=None, allow_failure=True)
+        api_response: ApiResponse[None] = simulate_request(
+            data_callback=None, allow_failure=True
+        )
 
         order_handling_process_status = OrderHandlingProcess.Status.SUCCEEDED
         process_status = "SUCCESS"
@@ -293,7 +305,7 @@ class Order(BaseModel):
             error: Error = api_response.response
             order_handling_process_status = OrderHandlingProcess.Status.FAILED
             process_status = "FAILED"
-            process_message = error.message,
+            process_message = (error.message,)
             is_successful = False
 
         OrderHandlingProcess.objects.create(

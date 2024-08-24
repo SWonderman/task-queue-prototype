@@ -87,7 +87,7 @@ def handle_order(order_id: str) -> None:
             },
         )
         return
-    
+
     was_marked_as_shipped = Order.mark_order_as_shipped(
         order,
         event_queue,

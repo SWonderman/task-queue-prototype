@@ -1,4 +1,3 @@
-import math
 from typing import List, Annotated, Set
 
 from fastapi import APIRouter, HTTPException, Path, Body, Request, Query
@@ -11,46 +10,12 @@ from core.tasks import handle_orders
 from core.definitions import Result
 
 from api.v1.schemas import order as order_schema, core as core_schema
-from api.v1.utils import order as order_api_utils
 from api.v1.generators.order import order_event_generator
 
 
 router = APIRouter()
 
 active_connections: Set[Request] = set()
-
-
-@router.get(
-    "/orders", response_model=core_schema.ResponseWithPagination[order_schema.Order]
-)
-def get_orders(
-    page: Annotated[int, Path(ge=1)] = 1,
-    display: Annotated[int, Path(ge=1, le=50)] = 15,
-):
-    orders_count: int = Order.objects.count()
-
-    all_pages_count = math.ceil(orders_count / display)
-    if page > all_pages_count:
-        page = all_pages_count
-
-    # NOTE: adjust for 0-based indexing
-    page -= 1
-
-    lower_boundary = page * display
-    upper_boundary = lower_boundary + display
-
-    orders: QuerySet[Order] = Order.objects.all()[lower_boundary:upper_boundary]
-
-    items = [
-        order_api_utils.convert_db_order_to_schema(order=order) for order in orders
-    ]
-
-    return core_schema.ResponseWithPagination(
-        current_page=page,
-        items_count=orders_count,
-        pages_count=all_pages_count,
-        items=items,
-    )
 
 
 @router.get("/orders/stream")

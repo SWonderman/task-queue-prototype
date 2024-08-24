@@ -84,7 +84,7 @@ class OrderShipment(BaseModel):
         shipment = None
         if api_response.status_code != 200 and isinstance(api_response.response, Error):
             error = api_response.response
-        else: 
+        else:
             shipment_data: OrderShipment = api_response.response
             shipment = cls.objects.create(
                 shipment_id=shipment_data.shipment_id,
@@ -134,8 +134,8 @@ class OrderHandlingProcess(BaseModel):
     @classmethod
     def update_processing(
         cls,
-        order: "Order", 
-        state: "OrderHandlingProcess.State", 
+        order: "Order",
+        state: "OrderHandlingProcess.State",
         started_at: datetime.datetime,
         event_queue,
         event_name: str,
@@ -273,7 +273,9 @@ class Order(BaseModel):
         error = None
         if not order.shipment:
             error = Error(message=f"Order with ID '{order.id}' does not have shipment.")
-        elif api_response.status_code != 200 and isinstance(api_response.response, Error):
+        elif api_response.status_code != 200 and isinstance(
+            api_response.response, Error
+        ):
             error = api_response.response
 
         OrderHandlingProcess.update_processing(
@@ -308,7 +310,7 @@ class Order(BaseModel):
             error=error,
         )
 
-        return error == None 
+        return error == None
 
     @classmethod
     def get_latest_handling_process_for_each_order(

@@ -1,5 +1,3 @@
-from typing import Dict
-
 from core.models import Order, OrderHandlingProcess
 
 from api.v1.schemas import order as order_schema
@@ -17,6 +15,7 @@ def convert_db_order_to_schema(order: Order) -> order_schema.Order:
             updated_at=str(latest_order_handling.updated_at),
             status=str(latest_order_handling.status),
             state=str(latest_order_handling.state),
+            message=latest_order_handling.message,
             started_at=str(latest_order_handling.started_at),
             finished_at=str(latest_order_handling.finished_at),
         )

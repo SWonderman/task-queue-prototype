@@ -1,6 +1,5 @@
-import datetime
 from typing import Optional, List
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 
 class BaseSchema(BaseModel):
@@ -29,6 +28,7 @@ class OrderItem(BaseSchema):
 class OrderHandlingProcess(BaseSchema):
     status: str
     state: str
+    message: Optional[str]
     started_at: str
     finished_at: str
 

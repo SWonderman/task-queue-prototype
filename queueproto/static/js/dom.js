@@ -58,6 +58,7 @@ export function fillInHandlingStatusHistoryModal(orderFulfillmentHistoryData) {
     statusPill.innerHTML = `
      <h3 class="pb-1 font-semibold text-sm">${toTitleCase(data["state"])}</h3>
      <p class="text-xs">Task Status: ${toTitleCase(data["status"])}</p>
+     <p class="text-xs">Message: ${data["message"] && data["message"] != "" ? data["message"] : "-"}</p>
      <p class="text-xs">Task Started At: ${new Date(data["started_at"]).toUTCString()}</p>
      <p class="text-xs">Task Finished At: ${new Date(data["finished_at"]).toUTCString()}</p>
      `;

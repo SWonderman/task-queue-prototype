@@ -113,6 +113,7 @@ def get_order_fulfillment_history(id: Annotated[str, Path(title="Order ID")]):
             updated_at=str(process.updated_at),
             status=str(process.status),
             state=str(process.state),
+            message=process.message,
             started_at=str(process.started_at),
             finished_at=str(process.finished_at),
         )

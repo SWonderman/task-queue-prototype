@@ -91,7 +91,7 @@ def generate_order_item() -> OrderItem:
     product_title = f"{PRODUCT_ADJECTIVES[random.randint(0, len(PRODUCT_ADJECTIVES) -1)]} {PRODUCT_MATERIALS[random.randint(0, len(PRODUCT_MATERIALS) -1)]} {PRODUCT_NAMES[random.randint(0, len(PRODUCT_NAMES)-1)]}"
 
     return OrderItem(
-        product_sku="".join(random.choice(characters_set) for i in range(6)),
+        product_sku="".join(random.choice(characters_set) for _ in range(6)),
         product_title=product_title,
         product_media_url=None,
         price=round(random.uniform(3.5, 10.0), 1),
@@ -107,7 +107,7 @@ def generate_order_shipment() -> OrderShipment:
         {"name": "Cargo Express", "code": "cargoex"},
     ]
     characters_set = string.ascii_letters + string.digits
-    shipment_id = "SHIPMENT-".join(random.choice(characters_set) for i in range(6))
+    shipment_id = "SHIPMENT-".join(random.choice(characters_set) for _ in range(6))
 
     carrier = carriers[random.randint(0, len(carriers) - 1)]
 
@@ -129,7 +129,6 @@ def generate_order() -> Order:
     today = datetime.datetime.now()
 
     min_time = datetime.time(0, 0, 0, 0)
-    max_time = today.time()
 
     min_today = datetime.datetime.combine(today.date(), min_time)
 

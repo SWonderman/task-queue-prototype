@@ -40,13 +40,13 @@ export function parseDateToDjangoFormat(originalDateString) {
 export function truncateFloatToTwoDecimalPlaces(number) {
   number = number.toString();
 
-  let dotIndex = number.indexOf(".");
+  const dotIndex = number.indexOf(".");
   if (dotIndex === -1) {
     number += ".00";
     return number;
   }
 
-  let decimals = number.slice(dotIndex + 1);
+  const decimals = number.slice(dotIndex + 1);
   if (decimals.length === 0) {
     number += "00";
   } else if (decimals.length === 1) {

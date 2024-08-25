@@ -13,18 +13,6 @@ services:
     depends_on:
       - redis
 
-  celery-worker:
-    build:
-      context: ./queueproto
-      dockerfile: Dockerfile
-    command: celery -A queueproto worker --loglevel=INFO
-    volumes:
-      - ./queueproto/:/usr/src/app/
-    env_file:
-      - ./queueproto/.env.docker
-    depends_on:
-      - redis
-
   celery-single-worker:
     build:
       context: ./queueproto

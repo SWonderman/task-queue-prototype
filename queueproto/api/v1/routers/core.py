@@ -84,10 +84,3 @@ def get_order_fulfillment_history(id: Annotated[str, Path(title="Order ID")]):
         )
         for process in handling_processes
     ]
-
-
-@router.on_event("shutdown")
-async def shutdown():
-    for conn in active_connections:
-        await conn.close()
-    active_connections.clear()

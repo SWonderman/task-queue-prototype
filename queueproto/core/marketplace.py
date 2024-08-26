@@ -149,21 +149,3 @@ def generate_order() -> Order:
         order_items=order_items,
         customer=customer,
     )
-
-
-def country_to_flag() -> Dict[str, str]:
-    return {
-        "austria": "flag-at.svg",
-        "belgium": "flag-be.svg",
-        "germany": "flag-de.svg",
-        "denmark": "flag-dk.svg",
-        "spain": "flag-es.svg",
-        "finland": "flag-fi.svg",
-        "france": "flag-fr.svg",
-        "italy": "flag-it.svg",
-        "netherlands": "flag-nl.svg",
-        "norway": "flag-no.svg",
-        "poland": "flag-pl.svg",
-        "portugal": "flag-pl.svg",
-        "sweden": "flag-se.svg",
-    }

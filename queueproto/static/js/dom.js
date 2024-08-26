@@ -1,4 +1,8 @@
-import { toTitleCase, parseDateToDjangoFormat, truncateFloatToTwoDecimalPlaces } from "./utils.js";
+import {
+  toTitleCase,
+  parseDateToDjangoFormat,
+  truncateFloatToTwoDecimalPlaces,
+} from "./utils.js";
 import { getOrderFulfillmentHistory } from "./api.js";
 
 export function setClickEventToDisplayHandlingStatusModal(element) {
@@ -73,9 +77,8 @@ export async function updateOrdersTable(orderData) {
   tr.className =
     "odd:bg-white even:bg-gray-50 border-b opacity-0 -translate-y-2 transition-all duration-700 ease-in";
 
-  const [outerDivClass, innerDivClass, spanClass, paragraphClass] = getFulfillmentStatusStylingBasedOnStatus(
-    orderData["state"]
-  );
+  const [outerDivClass, innerDivClass, spanClass, paragraphClass] =
+    getFulfillmentStatusStylingBasedOnStatus(orderData["state"]);
 
   const latestHandlingProcessState =
     orderData["latest_handling_process"] != null
@@ -86,9 +89,11 @@ export async function updateOrdersTable(orderData) {
     orderData["latest_handling_process"] != null
       ? orderData["latest_handling_process"]["status"]
       : null;
-  const handlingProcessStatusIcon = getLatestHandlingProcessStatusIcon(latestHandlingProcessStatus);
+  const handlingProcessStatusIcon = getLatestHandlingProcessStatusIcon(
+    latestHandlingProcessStatus,
+  );
 
-  const latestHandlingProcessCell = document.createElement("td")
+  const latestHandlingProcessCell = document.createElement("td");
   latestHandlingProcessCell.className = "px-2 py-4 text-center";
   latestHandlingProcessCell.setAttribute("data-order-id", orderData["id"]);
   setClickEventToDisplayHandlingStatusModal(latestHandlingProcessCell);
@@ -99,7 +104,7 @@ export async function updateOrdersTable(orderData) {
         <p class="text-xs text-gray-600">${latestHandlingProcessState}</p>
     </div>
     <p id="processing-status-${orderData["id"]}" class="text-xs text-gray-400"></p>
-  `
+  `;
 
   tr.innerHTML = `
     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
@@ -128,14 +133,22 @@ export async function updateOrdersTable(orderData) {
           </div>
         </div>
     </td>
-    ${latestHandlingProcessCell.outerHTML}
-    <td class="px-6 py-4 text-center">
-        ${orderData["total_quantity"] > 1 ? orderData["total_quantity"] + " items" : orderData["total_quantity"] + " item"}
-    </td>
-    <td class="px-6 py-4 text-center">
-        <a href="#" class="font-medium text-blue-600 hover:underline">Edit</a>
-    </td>
-  `
+  `;
+
+  const totalQuantityCell = document.createElement("td");
+  totalQuantityCell.classList = "px-6 py-4 text-center";
+  totalQuantityCell.innerHTML = `${orderData["total_quantity"] > 1 ? orderData["total_quantity"] + " items" : orderData["total_quantity"] + " item"}`;
+
+  const actionsCell = document.createElement("td");
+  actionsCell.classList = "px-6 py-4 text-center";
+  actionsCell.innerHTML = `<a href="#" class="font-medium text-blue-600 hover:underline">Edit</a>`;
+
+  // NOTE: since we are adding an event listener to the 'latestHandlingProcessCell' by using 'setClickEventToDisplayHandlingStatusModal'
+  // we cannot add it to the table's row as a string since the listener will be dropped. Therefore, it was necessary to append the 'latestHandlingProcessCell'
+  // as a child node.
+  tr.appendChild(latestHandlingProcessCell);
+  tr.appendChild(totalQuantityCell);
+  tr.appendChild(actionsCell);
 
   ordersTableBody.prepend(tr);
 
@@ -174,7 +187,7 @@ export function updateOrdersHandlingStatus(orderHandlingStatusData) {
   if (orderHandlingStatusData["status"] == "FAILED") {
     statusIcon = "<img src='static/icons/reject-x.svg' alt='Failure' />";
   }
-    
+
   handlingStatusDiv.innerHTML = `
     ${statusIcon}
     <p class="text-xs text-gray-600">${toTitleCase(orderHandlingStatusData["state"])}</p>
@@ -190,10 +203,9 @@ export function updateOrdersFulfillmentStatus(orderFulfillmentStatusData) {
     return;
   }
 
-  const fulfillmentStatus = orderFulfillmentStatusData["status"]
-  const [outerDivClass, innerDivClass, spanClass, paragraphClass] = getFulfillmentStatusStylingBasedOnStatus(
-    fulfillmentStatus
-  );
+  const fulfillmentStatus = orderFulfillmentStatusData["status"];
+  const [outerDivClass, innerDivClass, spanClass, paragraphClass] =
+    getFulfillmentStatusStylingBasedOnStatus(fulfillmentStatus);
 
   fulfillmentStatusTableCell.innerHTML = `
     <div class="${outerDivClass}">
@@ -230,16 +242,18 @@ function getFulfillmentStatusStylingBasedOnStatus(status) {
       break;
   }
 
-  return [outerDivClass, innerDivClass, spanClass, paragraphClass]
+  return [outerDivClass, innerDivClass, spanClass, paragraphClass];
 }
 
 function getLatestHandlingProcessStatusIcon(status) {
   let handlingProcessStatusIcon = "";
 
   if (status == "SUCCEEDED") {
-    handlingProcessStatusIcon = "<img src='static/icons/approve-tick.svg' alt='Success' />";
-  } else if (status == "FAILED") { 
-    handlingProcessStatusIcon = "<img src='static/icons/reject-x.svg' alt='Failure' />";
+    handlingProcessStatusIcon =
+      "<img src='static/icons/approve-tick.svg' alt='Success' />";
+  } else if (status == "FAILED") {
+    handlingProcessStatusIcon =
+      "<img src='static/icons/reject-x.svg' alt='Failure' />";
   }
 
   return handlingProcessStatusIcon;
